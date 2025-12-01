@@ -1,0 +1,7 @@
+#Bu sayede oluşturduğumuz sanal ortam (venv) GitHub'a yüklenmez.
+
+venv/
+__pycache__/
+*.pyc
+.env
+.DS_Store
