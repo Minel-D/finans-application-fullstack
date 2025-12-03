@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import "bootstrap/dist/css/bootstrap.min.css";
 
 function App() {
 	const [harcamalar, setHarcamalar] = useState([]);
@@ -10,9 +11,6 @@ function App() {
 		tarih: "",
 	});
 
-	// --- YENİ STATE: DÜZENLEME MODU ---
-	// Eğer bu null ise: "Ekleme Modundayız"
-	// Eğer içinde sayı varsa (örn: 5): "5 numaralı ID'yi düzenliyoruz"
 	const [duzenlenenId, setDuzenlenenId] = useState(null);
 
 	useEffect(() => {
@@ -21,7 +19,7 @@ function App() {
 
 	const fetchHarcamalar = async () => {
 		try {
-			const response = await fetch("http://127.0.0.1:8000/harcamalar/");
+			const response = await fetch("http://127.0.0.1:8000/harcamalar/"); // Render'a geçince burası değişecek
 			const data = await response.json();
 			setHarcamalar(data);
 		} catch (error) {
@@ -34,27 +32,22 @@ function App() {
 		setYeniHarcama({ ...yeniHarcama, [name]: value });
 	};
 
-	// --- BUTONA BASILINCA (HEM EKLEME HEM GÜNCELLEME) ---
 	const handleFormSubmit = async (e) => {
 		e.preventDefault();
 		const veri = { ...yeniHarcama, miktar: parseFloat(yeniHarcama.miktar) };
 
 		try {
 			let response;
-
-			// KARAR ANI: Ekleme mi yapıyoruz, Güncelleme mi?
 			if (duzenlenenId) {
-				// --- GÜNCELLEME (PUT) ---
 				response = await fetch(
 					`http://127.0.0.1:8000/harcamalar/${duzenlenenId}`,
 					{
-						method: "PUT", // Metod PUT oldu
+						method: "PUT",
 						headers: { "Content-Type": "application/json" },
 						body: JSON.stringify(veri),
 					}
 				);
 			} else {
-				// --- EKLEME (POST) ---
 				response = await fetch("http://127.0.0.1:8000/harcamalar/", {
 					method: "POST",
 					headers: { "Content-Type": "application/json" },
@@ -63,8 +56,7 @@ function App() {
 			}
 
 			if (response.ok) {
-				fetchHarcamalar(); // Listeyi yenile
-				// Formu temizle ve düzenleme modundan çık
+				fetchHarcamalar();
 				setYeniHarcama({
 					aciklama: "",
 					miktar: "",
@@ -80,11 +72,8 @@ function App() {
 		}
 	};
 
-	// --- DÜZENLE BUTONUNA BASILINCA ---
 	const handleDuzenleSec = (harcama) => {
-		// 1. Düzenlenecek ID'yi hafızaya al
 		setDuzenlenenId(harcama.id);
-		// 2. O satırdaki verileri forma geri doldur (Pre-fill)
 		setYeniHarcama({
 			aciklama: harcama.aciklama,
 			miktar: harcama.miktar,
@@ -93,7 +82,6 @@ function App() {
 		});
 	};
 
-	// --- VAZGEÇ BUTONU İÇİN ---
 	const handleIptal = () => {
 		setDuzenlenenId(null);
 		setYeniHarcama({ aciklama: "", miktar: "", kategori: "Genel", tarih: "" });
@@ -115,161 +103,154 @@ function App() {
 	};
 
 	return (
-		<div
-			style={{
-				padding: "20px",
-				fontFamily: "Arial",
-				maxWidth: "800px",
-				margin: "0 auto",
-			}}>
-			<h1>💰 Finans Takip Uygulaması</h1>
+		<div className="container mt-5">
+			<h1 className="text-center mb-4 display-4 text-primary">
+				💰 Finans Takip
+			</h1>
 
-			{/* Form Alanı */}
-			<div
-				style={{
-					background: duzenlenenId ? "#fff3cd" : "#f4f4f4",
-					padding: "15px",
-					marginBottom: "20px",
-					borderRadius: "8px",
-					border: duzenlenenId ? "2px solid orange" : "none",
-				}}>
-				<h3>
-					{duzenlenenId ? "✏️ Harcamayı Düzenle" : "➕ Yeni Harcama Ekle"}
-				</h3>
+			<div className="row">
+				{/* --- FORM ALANI (SOL TARAFA ALDIK) --- */}
+				<div className="col-md-4">
+					<div
+						className={`card shadow ${
+							duzenlenenId ? "border-warning" : "border-success"
+						}`}>
+						<div
+							className={`card-header text-white ${
+								duzenlenenId ? "bg-warning" : "bg-success"
+							}`}>
+							<h5 className="mb-0">
+								{duzenlenenId ? "✏️ Düzenle" : "➕ Yeni Ekle"}
+							</h5>
+						</div>
+						<div className="card-body">
+							<form onSubmit={handleFormSubmit}>
+								<div className="mb-3">
+									<label className="form-label">Açıklama</label>
+									<input
+										type="text"
+										className="form-control"
+										name="aciklama"
+										value={yeniHarcama.aciklama}
+										onChange={handleInputChange}
+										required
+									/>
+								</div>
+								<div className="mb-3">
+									<label className="form-label">Tutar (TL)</label>
+									<input
+										type="number"
+										className="form-control"
+										name="miktar"
+										value={yeniHarcama.miktar}
+										onChange={handleInputChange}
+										required
+									/>
+								</div>
+								<div className="mb-3">
+									<label className="form-label">Kategori</label>
+									<select
+										className="form-select"
+										name="kategori"
+										value={yeniHarcama.kategori}
+										onChange={handleInputChange}>
+										<option value="Genel">Genel</option>
+										<option value="Gıda">Gıda</option>
+										<option value="Ulaşım">Ulaşım</option>
+										<option value="Eğlence">Eğlence</option>
+										<option value="Yatırım">Yatırım</option>
+									</select>
+								</div>
+								<div className="mb-3">
+									<label className="form-label">Tarih</label>
+									<input
+										type="date"
+										className="form-control"
+										name="tarih"
+										value={yeniHarcama.tarih}
+										onChange={handleInputChange}
+										required
+									/>
+								</div>
 
-				<form
-					onSubmit={handleFormSubmit}
-					style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
-					<input
-						type="text"
-						name="aciklama"
-						placeholder="Açıklama"
-						value={yeniHarcama.aciklama}
-						onChange={handleInputChange}
-						required
-					/>
-					<input
-						type="number"
-						name="miktar"
-						placeholder="Tutar"
-						value={yeniHarcama.miktar}
-						onChange={handleInputChange}
-						required
-					/>
-					<select
-						name="kategori"
-						value={yeniHarcama.kategori}
-						onChange={handleInputChange}>
-						<option value="Genel">Genel</option>
-						<option value="Gıda">Gıda</option>
-						<option value="Ulaşım">Ulaşım</option>
-						<option value="Eğlence">Eğlence</option>
-						<option value="Yatırım">Yatırım</option>
-					</select>
-					<input
-						type="date"
-						name="tarih"
-						value={yeniHarcama.tarih}
-						onChange={handleInputChange}
-						required
-					/>
+								<div className="d-grid gap-2">
+									<button
+										type="submit"
+										className={`btn ${
+											duzenlenenId ? "btn-warning text-white" : "btn-success"
+										}`}>
+										{duzenlenenId ? "GÜNCELLE" : "EKLE"}
+									</button>
+									{duzenlenenId && (
+										<button
+											type="button"
+											onClick={handleIptal}
+											className="btn btn-secondary">
+											İPTAL
+										</button>
+									)}
+								</div>
+							</form>
+						</div>
+					</div>
+				</div>
 
-					{/* Buton Dinamikleşti */}
-					<button
-						type="submit"
-						style={{
-							background: duzenlenenId ? "orange" : "green",
-							color: "white",
-							border: "none",
-							padding: "10px",
-							cursor: "pointer",
-							borderRadius: "4px",
-						}}>
-						{duzenlenenId ? "GÜNCELLE" : "EKLE"}
-					</button>
-
-					{/* Düzenleme Modundaysak İptal Butonu Çıksın */}
-					{duzenlenenId && (
-						<button
-							type="button"
-							onClick={handleIptal}
-							style={{
-								background: "gray",
-								color: "white",
-								border: "none",
-								padding: "10px",
-								cursor: "pointer",
-								borderRadius: "4px",
-							}}>
-							İPTAL
-						</button>
-					)}
-				</form>
+				{/* --- TABLO ALANI (SAĞ TARAFA ALDIK) --- */}
+				<div className="col-md-8">
+					<div className="card shadow">
+						<div className="card-body">
+							<table className="table table-hover table-striped">
+								<thead className="table-dark">
+									<tr>
+										<th>Açıklama</th>
+										<th>Miktar</th>
+										<th>Kategori</th>
+										<th>Tarih</th>
+										<th>İşlem</th>
+									</tr>
+								</thead>
+								<tbody>
+									{harcamalar.map((harcama) => (
+										<tr
+											key={harcama.id}
+											className={
+												duzenlenenId === harcama.id ? "table-warning" : ""
+											}>
+											<td>{harcama.aciklama}</td>
+											<td>
+												<span className="badge bg-info text-dark fs-6">
+													{harcama.miktar} ₺
+												</span>
+											</td>
+											<td>{harcama.kategori}</td>
+											<td>{harcama.tarih}</td>
+											<td>
+												<div className="btn-group" role="group">
+													<button
+														onClick={() => handleDuzenleSec(harcama)}
+														className="btn btn-sm btn-outline-warning">
+														✏️
+													</button>
+													<button
+														onClick={() => handleSil(harcama.id)}
+														className="btn btn-sm btn-outline-danger">
+														🗑️
+													</button>
+												</div>
+											</td>
+										</tr>
+									))}
+								</tbody>
+							</table>
+							{harcamalar.length === 0 && (
+								<p className="text-center mt-3 text-muted">
+									Henüz harcama yok.
+								</p>
+							)}
+						</div>
+					</div>
+				</div>
 			</div>
-
-			<table border="1" style={{ width: "100%", borderCollapse: "collapse" }}>
-				<thead>
-					<tr style={{ backgroundColor: "#333", color: "white" }}>
-						<th>ID</th>
-						<th>Açıklama</th>
-						<th>Miktar (TL)</th>
-						<th>Kategori</th>
-						<th>Tarih</th>
-						<th>İşlemler</th>
-					</tr>
-				</thead>
-				<tbody>
-					{harcamalar.map((harcama) => (
-						<tr
-							key={harcama.id}
-							style={{
-								backgroundColor:
-									duzenlenenId === harcama.id ? "#fff3cd" : "white",
-							}}>
-							<td>{harcama.id}</td>
-							<td>{harcama.aciklama}</td>
-							<td>{harcama.miktar} ₺</td>
-							<td>{harcama.kategori}</td>
-							<td>{harcama.tarih}</td>
-							<td
-								style={{
-									textAlign: "center",
-									display: "flex",
-									gap: "5px",
-									justifyContent: "center",
-									padding: "5px",
-								}}>
-								{/* DÜZENLE BUTONU */}
-								<button
-									onClick={() => handleDuzenleSec(harcama)}
-									style={{
-										background: "orange",
-										color: "white",
-										border: "none",
-										padding: "5px 10px",
-										cursor: "pointer",
-										borderRadius: "4px",
-									}}>
-									Düzenle ✏️
-								</button>
-								{/* SİL BUTONU */}
-								<button
-									onClick={() => handleSil(harcama.id)}
-									style={{
-										background: "red",
-										color: "white",
-										border: "none",
-										padding: "5px 10px",
-										cursor: "pointer",
-										borderRadius: "4px",
-									}}>
-									Sil 🗑️
-								</button>
-							</td>
-						</tr>
-					))}
-				</tbody>
-			</table>
 		</div>
 	);
 }
