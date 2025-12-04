@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import "bootstrap/dist/css/bootstrap.min.css";
+import HarcamaGrafik from "./components/HarcamaGrafik";
 
 function App() {
 	const [harcamalar, setHarcamalar] = useState([]);
@@ -108,9 +109,10 @@ function App() {
 				💰 Finans Takip
 			</h1>
 
-			<div className="row">
-				{/* --- FORM ALANI (SOL TARAFA ALDIK) --- */}
-				<div className="col-md-4">
+			{/* ÜST BÖLÜM: FORM VE GRAFİK YAN YANA */}
+			<div className="row mb-4">
+				{/* SOL: Form Alanı */}
+				<div className="col-md-5">
 					<div
 						className={`card shadow ${
 							duzenlenenId ? "border-warning" : "border-success"
@@ -195,12 +197,23 @@ function App() {
 					</div>
 				</div>
 
-				{/* --- TABLO ALANI (SAĞ TARAFA ALDIK) --- */}
-				<div className="col-md-8">
+				{/* SAĞ: Grafik Alanı (YENİ EKLENEN KISIM) */}
+				<div className="col-md-7">
+					{/* Hazırladığımız bileşeni buraya koyuyoruz ve veriyi (harcamalar) içine gönderiyoruz */}
+					<HarcamaGrafik veriler={harcamalar} />
+				</div>
+			</div>
+
+			{/* ALT BÖLÜM: Tablo Alanı */}
+			<div className="row">
+				<div className="col-12">
 					<div className="card shadow">
+						<div className="card-header bg-dark text-white">
+							<h5 className="mb-0">📋 Harcama Listesi</h5>
+						</div>
 						<div className="card-body">
 							<table className="table table-hover table-striped">
-								<thead className="table-dark">
+								<thead className="table-light">
 									<tr>
 										<th>Açıklama</th>
 										<th>Miktar</th>
