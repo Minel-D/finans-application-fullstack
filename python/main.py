@@ -1,36 +1,28 @@
-from fastapi import FastAPI, Depends, HTTPException
-from sqlalchemy.orm import Session
-from typing import List
+from fastapi import FastAPI, Depends, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from sqlalchemy.orm import Session
+from datetime import timedelta
+from typing import List
 
 import models
 import schemas
+import utils
 from database import SessionLocal, engine
 
-# Veritabanı tablolarını oluştur (Eğer database.py'yi çalıştırmadıysan bu garanti eder)
+# Tabloları oluştur
 models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
 
-
-origins = [
-    "http://localhost:3000", # React'ın çalışacağı adres
-    "http://127.0.0.1:3000",
-]
-
-# main.py dosyasındaki CORS kısmı şöyle olmalı:
-
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # <--- DİKKAT: Burayı ["*"] yaptık. Tüm kapıları açtık.
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# --- Bağımlılık (Dependency) ---
-# Her istekte veritabanı oturumu açar, işlem bitince kapatır.
-# Bu, veritabanı bağlantılarının açık kalıp sunucuyu kilitlemesini önler.
 def get_db():
     db = SessionLocal()
     try:
@@ -38,77 +30,122 @@ def get_db():
     finally:
         db.close()
 
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
+# --- GÜVENLİK FONKSİYONLARI ---
 
-# --- API Uç Noktaları (Endpoints) ---
+# main.py dosyasındaki create_user ve login fonksiyonlarını BUL ve BUNLARLA DEĞİŞTİR:
 
-# 1. Veri Ekleme (POST Request)
-# Kullanıcı '/harcamalar/' adresine JSON verisi gönderir.
-# response_model: Kullanıcıya geri dönülecek veri formatını belirler.
-@app.post("/harcamalar/", response_model=schemas.Harcama)
-def harcama_olustur(harcama: schemas.HarcamaCreate, db: Session = Depends(get_db)):
-    # Pydantic şemasından gelen veriyi SQL modeline çeviriyoruz
-    db_harcama = models.Transaction(
-        aciklama=harcama.aciklama,
-        miktar=harcama.miktar,
-        kategori=harcama.kategori,
-        tarih=harcama.tarih
+# 1. DETAYLI KAYIT FONKSİYONU
+@app.post("/users/", response_model=schemas.User)
+def create_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
+    print(f"\n📝 KAYIT DENEMESİ: {user.email}") # Terminale yaz
+    
+    # Email kontrolü
+    db_user = db.query(models.User).filter(models.User.email == user.email).first()
+    if db_user:
+        print("❌ HATA: Bu email zaten var!")
+        raise HTTPException(status_code=400, detail="Bu email zaten kayıtlı")
+    
+    # Şifreleme ve Kayıt
+    hashed_password = utils.get_password_hash(user.password)
+    print(f"🔑 Şifre Hashlendi: {hashed_password[:10]}...")
+    
+    new_user = models.User(email=user.email, hashed_password=hashed_password)
+    db.add(new_user)
+    db.commit()
+    db.refresh(new_user)
+    
+    print(f"✅ KAYIT BAŞARILI! ID: {new_user.id} olarak veritabanına yazıldı.\n")
+    return new_user
+
+# 2. DETAYLI GİRİŞ FONKSİYONU
+@app.post("/token", response_model=schemas.Token)
+def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
+    print(f"\n🔍 GİRİŞ DENEMESİ: {form_data.username} (Şifre: {form_data.password})")
+    
+    # Kullanıcıyı ara
+    user = db.query(models.User).filter(models.User.email == form_data.username).first()
+    
+    if not user:
+        print(f"❌ HATA: '{form_data.username}' veritabanında BULUNAMADI!")
+        # Debug için tüm kullanıcıları yazdıralım
+        all_users = db.query(models.User).all()
+        print(f"📂 Mevcut Kullanıcılar: {[u.email for u in all_users]}")
+    else:
+        print(f"✅ KULLANICI BULUNDU: ID={user.id}")
+        
+        # Şifre kontrolü
+        if not utils.verify_password(form_data.password, user.hashed_password):
+             print(f"❌ ŞİFRE YANLIŞ! Veritabanındaki Hash: {user.hashed_password[:10]}...")
+        else:
+             print("✅ ŞİFRE DOĞRU! Giriş yapılıyor...")
+
+    if not user or not utils.verify_password(form_data.password, user.hashed_password):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Email veya şifre hatalı",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    
+    access_token_expires = timedelta(minutes=utils.ACCESS_TOKEN_EXPIRE_MINUTES)
+    access_token = utils.create_access_token(
+        data={"sub": user.email}, expires_delta=access_token_expires
     )
-    # Veritabanına ekle
+    return {"access_token": access_token, "token_type": "bearer"}
+
+# Şu anki kullanıcıyı bul
+async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Giriş yapmanız gerekiyor",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+    try:
+        payload = utils.jwt.decode(token, utils.SECRET_KEY, algorithms=[utils.ALGORITHM])
+        email: str = payload.get("sub")
+        if email is None:
+            raise credentials_exception
+    except utils.jwt.JWTError:
+        raise credentials_exception
+    user = db.query(models.User).filter(models.User.email == email).first()
+    if user is None:
+        raise credentials_exception
+    return user
+
+# --- HARCAMA İŞLEMLERİ (ARTIK KORUMALI) ---
+
+@app.post("/harcamalar/", response_model=schemas.Harcama)
+def create_harcama(harcama: schemas.HarcamaCreate, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
+    db_harcama = models.Transaction(**harcama.dict(), owner_id=current_user.id)
     db.add(db_harcama)
-    # Değişiklikleri kaydet (Commit)
     db.commit()
-    # Eklenen veriyi, ID'si oluşmuş haliyle geri çek (Refresh)
     db.refresh(db_harcama)
     return db_harcama
 
-# 2. Tüm Verileri Listeleme (GET Request)
-# Kullanıcı '/harcamalar/' adresine girdiğinde çalışır.
 @app.get("/harcamalar/", response_model=List[schemas.Harcama])
-def harcamalari_listele(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
-    # SQL sorgusu: SELECT * FROM harcamalar LIMIT 100
-    harcamalar = db.query(models.Transaction).offset(skip).limit(limit).all()
-    return harcamalar
+def read_harcamalar(db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
+    # Sadece giriş yapanın verilerini getir
+    return db.query(models.Transaction).filter(models.Transaction.owner_id == current_user.id).all()
 
-
-# 3. Veri Silme (DELETE Request)
-# Endpoint: /harcamalar/
 @app.delete("/harcamalar/{harcama_id}")
-def harcama_sil(harcama_id: int, db: Session = Depends(get_db)):
-    # Adım 1: Veritabanında bu ID'ye sahip satırı bul
-    harcama = db.query(models.Transaction).filter(models.Transaction.id == harcama_id).first()
-    
-    # Adım 2: Eğer yoksa hata fırlat
-    if harcama is None:
-        raise HTTPException(status_code=404, detail="Harcama bulunamadı")
-    
-    # Adım 3: Varsa silme işlemini bellekte hazırla
+def delete_harcama(harcama_id: int, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
+    harcama = db.query(models.Transaction).filter(models.Transaction.id == harcama_id, models.Transaction.owner_id == current_user.id).first()
+    if not harcama:
+        raise HTTPException(status_code=404, detail="Bulunamadı")
     db.delete(harcama)
-    
-    # Adım 4: İşlemi onayla ve diske yaz
     db.commit()
-    
-    return {"mesaj": "Harcama başarıyla silindi"}
+    return {"detail": "Silindi"}
 
-# 4. Veri Güncelleme (PUT Request)
-# Endpoint: /harcamalar/
 @app.put("/harcamalar/{harcama_id}", response_model=schemas.Harcama)
-def harcama_guncelle(harcama_id: int, harcama_veri: schemas.HarcamaCreate, db: Session = Depends(get_db)):
-    # Adım 1: Güncellenecek kaydı bul
-    db_harcama = db.query(models.Transaction).filter(models.Transaction.id == harcama_id).first()
-    
-    # Adım 2: Kayıt yoksa hata ver
-    if db_harcama is None:
-        raise HTTPException(status_code=404, detail="Harcama bulunamadı")
-    
-    # Adım 3: Gelen yeni verileri mevcut veritabanı nesnesine aktar
-    db_harcama.aciklama = harcama_veri.aciklama
-    db_harcama.miktar = harcama_veri.miktar
-    db_harcama.kategori = harcama_veri.kategori
-    db_harcama.tarih = harcama_veri.tarih
-    
-    # Adım 4: Kaydet ve yenilenmiş veriyi geri döndür
+def update_harcama(harcama_id: int, veri: schemas.HarcamaCreate, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
+    harcama = db.query(models.Transaction).filter(models.Transaction.id == harcama_id, models.Transaction.owner_id == current_user.id).first()
+    if not harcama:
+        raise HTTPException(status_code=404, detail="Bulunamadı")
+    harcama.aciklama = veri.aciklama
+    harcama.miktar = veri.miktar
+    harcama.kategori = veri.kategori
+    harcama.tarih = veri.tarih
     db.commit()
-    db.refresh(db_harcama)
-    
-    return db_harcama
+    db.refresh(harcama)
+    return harcama

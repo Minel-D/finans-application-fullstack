@@ -1,23 +1,41 @@
 from pydantic import BaseModel
+from typing import List, Optional
 
-# Temel Şema: Hem veri okurken hem yazarken ortak olan alanlar
+# --- TOKEN ŞEMASI ---
+class Token(BaseModel):
+    access_token: str
+    token_type: str
+
+class TokenData(BaseModel):
+    email: Optional[str] = None
+
+# --- HARCAMA ŞEMALARI ---
 class HarcamaBase(BaseModel):
     aciklama: str
     miktar: float
     kategori: str
     tarih: str
 
-# Veri Oluşturma Şeması (Create):
-# Kullanıcıdan veri alırken sadece yukarıdaki temel bilgileri isteriz.
-# ID veritabanı tarafından otomatik verilir, kullanıcıdan istemeyiz.
 class HarcamaCreate(HarcamaBase):
     pass
 
-# Veri Okuma Şeması (Response):
-# Kullanıcıya veri gösterirken ID bilgisini de göstermek isteriz.
 class Harcama(HarcamaBase):
     id: int
+    owner_id: int
 
-    # Bu ayar, Pydantic'in veritabanı modellerini (ORM) okumasını sağlar.
+    class Config:
+        from_attributes = True
+
+# --- KULLANICI ŞEMALARI ---
+class UserBase(BaseModel):
+    email: str
+
+class UserCreate(UserBase):
+    password: str
+
+class User(UserBase):
+    id: int
+    harcamalar: List[Harcama] = []
+
     class Config:
         from_attributes = True
