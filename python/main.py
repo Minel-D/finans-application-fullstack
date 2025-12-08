@@ -11,6 +11,11 @@ import schemas
 import utils
 from database import SessionLocal, engine
 
+import os
+from dotenv import load_dotenv
+# .env dosyasını yükle
+load_dotenv()
+
 # Tabloları oluştur
 models.Base.metadata.create_all(bind=engine)
 
@@ -157,7 +162,9 @@ def update_harcama(harcama_id: int, veri: schemas.HarcamaCreate, db: Session = D
 
 # Google API Ayarı
 
-genai.configure(api_key="AIzaSyAcPpiMT15H5HskbFvS1UAomCEqn1roLiI")
+api_key = os.getenv("GOOGLE_API_KEY") 
+genai.configure(api_key=api_key)
+
 
 @app.post("/analyze/")
 def analyze_spending(db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
