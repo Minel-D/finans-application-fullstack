@@ -4,6 +4,7 @@ from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from datetime import timedelta
 from typing import List
+import google.generativeai as genai
 
 import models
 import schemas
@@ -149,3 +150,56 @@ def update_harcama(harcama_id: int, veri: schemas.HarcamaCreate, db: Session = D
     db.commit()
     db.refresh(harcama)
     return harcama
+
+
+
+# --- YAPAY ZEKA ANALİZİ ---
+
+# Google API Ayarı
+
+genai.configure(api_key="AIzaSyAcPpiMT15H5HskbFvS1UAomCEqn1roLiI")
+
+@app.post("/analyze/")
+def analyze_spending(db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
+    print(f"🤖 AI Analizi İsteği Geldi - Kullanıcı: {current_user.email}") # Debug logu
+
+    # 1. Harcamaları çek
+    harcamalar = db.query(models.Transaction).filter(models.Transaction.owner_id == current_user.id).all()
+    
+    # 2. Eğer harcama yoksa
+    if not harcamalar:
+        print("ℹ️ Harcama yok, bilgi mesajı dönülüyor.")
+        return {"analiz": "Henüz analiz yapacak kadar veriniz yok. Lütfen birkaç harcama ekleyin."}
+
+    # 3. Veriyi hazırla
+    veri_ozeti = ""
+    toplam = 0
+    for h in harcamalar:
+        veri_ozeti += f"- {h.kategori}: {h.miktar} TL ({h.aciklama})\n"
+        toplam += h.miktar
+    
+    print(f"📊 Toplam Harcama: {toplam} TL. Gemini'ye soruluyor...")
+
+    # 4. Gemini'ye Sor (Hata Korumalı)
+    try:
+        model = genai.GenerativeModel('gemini-2.5-flash')
+        prompt = f"""
+        Sen bir finansal danışmansın. Aşağıda bir kişinin harcama listesi var.
+        Toplam Harcama: {toplam} TL.
+        
+        Harcama Listesi:
+        {veri_ozeti}
+        
+        Lütfen bu kişiye:
+        1. Harcamalarını kısaca analiz et.
+        2. Tasarruf edebileceği alanları söyle.
+        3. Esprili ve samimi bir dille, kısa bir paragraf (maksimum 3 cümle) tavsiye ver.
+        """
+        
+        response = model.generate_content(prompt)
+        print("✅ Gemini Cevap Verdi.")
+        return {"analiz": response.text}
+        
+    except Exception as e:
+        print(f"❌ AI HATASI: {e}") # Terminalde hatayı gör
+        return {"analiz": f"Yapay zeka servisinde bir sorun oluştu. (Hata Detayı: {str(e)})"}
