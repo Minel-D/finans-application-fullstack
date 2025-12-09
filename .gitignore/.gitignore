@@ -1,11 +1,19 @@
-#Bu sayede oluşturduğumuz sanal ortam (venv) GitHub'a yüklenmez.
-
+# Python sanal ortamı
 venv/
+env/
+
+# Python cache dosyaları (Gereksiz)
 __pycache__/
 *.pyc
+
+# GİZLİ DOSYALAR (ÇOK ÖNEMLİ)
 .env
+**/.env
+*.env
+
+# Sistem dosyaları
 .DS_Store
+
+# Frontend gereksizleri
 node_modules/
-frontend/node_modules/
 dist/
-frontend/dist/
