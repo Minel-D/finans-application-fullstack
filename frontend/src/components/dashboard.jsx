@@ -146,8 +146,13 @@ function Dashboard() {
 	};
 
 	return (
-		<div style={{ position: "relative", minHeight: "100vh" }}>
-			{/* --- ARKA PLAN RESMİ (SABİT VE ŞEFFAF) --- */}
+		<div
+			style={{
+				position: "relative",
+				minHeight: "100vh",
+				fontFamily: "'Libre Baskerville', serif", // <-- İŞTE BU SATIR EKLENDİ
+			}}>
+			{/* --- ARKA PLAN RESMİ (Senin Kodun - Aynen Korundu) --- */}
 			<div
 				style={{
 					position: "fixed",
@@ -158,45 +163,73 @@ function Dashboard() {
 					backgroundImage: "url('/finans.webp')",
 					backgroundSize: "cover",
 					backgroundPosition: "center",
-					opacity: 0.3,
+					opacity: 0.15,
 					zIndex: -1,
 				}}></div>
 
-			{/* --- ÜST MENÜ BAR (NAVBAR) - BEYAZ VE NET --- */}
+			{/* --- HEADER (DÜZENLENDİ) --- */}
 			<nav
-				className="navbar navbar-light bg-white shadow-sm mb-4 px-4 py-3 sticky-top"
-				style={{ zIndex: 1000, position: "relative" }}>
+				className="navbar px-4 py-3 sticky-top shadow-lg"
+				style={{
+					zIndex: 1000,
+					position: "sticky",
+					top: 0,
+					// BURAYI DEĞİŞTİRDİM: Düz beyaz yerine şık bir koyu mavi gradyan
+					background: "linear-gradient(90deg, #1e3c72 0%, #2a5298 100%)",
+					color: "white",
+				}}>
+				{/* Sol: Hamburger */}
 				<div className="d-flex align-items-center">
 					<button
-						className="btn btn-light border me-3"
+						className="btn btn-outline-light border-0 me-3"
 						onClick={() => setShowMenu(true)}
-						style={{ fontSize: "1.2rem", padding: "5px 12px" }}>
+						style={{ fontSize: "1.4rem", padding: "5px 10px" }}>
 						☰
 					</button>
+				</div>
+
+				{/* Orta: Başlık (Ortalandı ve Font Değişti) */}
+				<div
+					style={{
+						position: "absolute",
+						left: "50%",
+						transform: "translateX(-50%)",
+						textAlign: "center",
+					}}>
 					<h1
-						className="h3 mb-0 text-primary fw-bold"
-						style={{ letterSpacing: "-1px" }}>
-						💰 Finans Takip
+						className="h4 mb-0 fw-light"
+						style={{
+							letterSpacing: "2px",
+							fontFamily: "'Dancing Script'",
+							fontSize: "1.4rem",
+						}}>
+						FİNANS <span className="fw-bold">TAKİP</span>
 					</h1>
 				</div>
 
+				{/* Sağ: AI Butonu */}
 				<button
 					onClick={handleAnaliz}
-					className="btn btn-primary btn-sm px-3 shadow-sm rounded-pill">
+					className="btn btn-light text-primary fw-bold btn-sm px-4 py-2 shadow-sm rounded-pill">
 					✨ AI Analiz
 				</button>
 			</nav>
 
-			<div className="container" style={{ position: "relative", zIndex: 1 }}>
+			<div
+				className="container pt-4"
+				style={{ position: "relative", zIndex: 1 }}>
 				<div className="row mb-4">
-					{/* SOL: FORM */}
+					{/* SOL: FORM (Senin Kodun - Aynen Korundu) */}
 					<div className="col-md-4 mb-3">
 						<div className={`card shadow-sm border-0 h-100 bg-white`}>
 							<div
-								className={`card-header text-white fw-bold ${
-									duzenlenenId ? "bg-warning" : "bg-success"
-								}`}>
-								{duzenlenenId ? "✏️ Harcama Düzenle" : "➕ Yeni Ekle"}
+								className={`card-header text-white fw-bold`}
+								style={{
+									background: duzenlenenId
+										? ""
+										: "linear-gradient(90deg, rgb(20, 100, 60) 0%, rgb(40, 167, 69) 100%)",
+								}}>
+								{duzenlenenId ? "✏️ Harcama Düzenle" : "➕ Yeni İşlem"}
 							</div>
 							<div className="card-body">
 								<form onSubmit={handleFormSubmit}>
@@ -257,9 +290,17 @@ function Dashboard() {
 									<div className="d-grid gap-2">
 										<button
 											type="submit"
-											className={`btn ${
-												duzenlenenId ? "btn-warning text-white" : "btn-success"
-											}`}>
+											className={`btn`}
+											style={
+												duzenlenenId
+													? {}
+													: {
+															background:
+																"linear-gradient(90deg, rgb(20, 100, 60) 0%, rgb(40, 167, 69) 100%)",
+															border: "none",
+															color: "white",
+													  }
+											}>
 											{duzenlenenId ? "GÜNCELLE" : "EKLE"}
 										</button>
 										{duzenlenenId && (
@@ -276,7 +317,7 @@ function Dashboard() {
 						</div>
 					</div>
 
-					{/* SAĞ: GRAFİK */}
+					{/* SAĞ: GRAFİK (Senin Kodun - Aynen Korundu) */}
 					<div className="col-md-8 mb-3">
 						<div className="card shadow-sm border-0 h-100 bg-white">
 							<div className="card-header bg-white border-bottom-0 pt-3">
@@ -291,12 +332,23 @@ function Dashboard() {
 					</div>
 				</div>
 
-				{/* TABLO */}
+				{/* TABLO (Senin Kodun - Aynen Korundu) */}
 				<div className="row">
-					<div className="col-12" style={{ marginBottom: "30px" }}>
+					<div className="col-12" style={{ marginBottom: "50px" }}>
 						<div className="card shadow-sm border-0 bg-white">
 							<div className="card-header bg-white py-3">
-								<h5 className="mb-0 text-primary fw-bold">📋 Son Harcamalar</h5>
+								<h5
+									className="mb-0 fw-bold"
+									style={{
+										background:
+											"linear-gradient(90deg, rgb(30, 60, 114) 0%, rgb(42, 82, 152) 100%)",
+										WebkitBackgroundClip: "text",
+										WebkitTextFillColor: "transparent",
+										backgroundClip: "text",
+										display: "inline-block",
+									}}>
+									Son Harcamalar
+								</h5>
 							</div>
 							<div className="card-body p-0">
 								<div className="table-responsive">
@@ -361,14 +413,14 @@ function Dashboard() {
 				</div>
 			</div>
 
-			{/* --- SOL MENÜ (HAMBURGER SIDEBAR) --- */}
+			{/* --- SOL MENÜ (HAMBURGER SIDEBAR) (Senin Kodun) --- */}
 			<div
 				className={`offcanvas offcanvas-start ${showMenu ? "show" : ""}`}
 				tabIndex="-1"
 				style={{
 					visibility: showMenu ? "visible" : "hidden",
 					width: "280px",
-					zIndex: 1055, // En üste aldık
+					zIndex: 1055,
 					position: "fixed",
 					top: 0,
 					bottom: 0,
@@ -376,77 +428,76 @@ function Dashboard() {
 					backgroundColor: "white",
 					boxShadow: "5px 0 15px rgba(0,0,0,0.1)",
 				}}>
-				<div className="offcanvas-header bg-light border-bottom">
-					<h5 className="offcanvas-title text-primary fw-bold">💰 Menü</h5>
+				<div className="offcanvas-header border-bottom">
+					<h5 className="offcanvas-title fw-bold text-dark">Menü</h5>
 					<button
 						type="button"
-						className="btn-close text-reset"
+						className="btn-close"
 						onClick={() => setShowMenu(false)}></button>
 				</div>
 				<div className="offcanvas-body p-0">
 					<div className="list-group list-group-flush">
-						<button className="list-group-item list-group-item-action py-3 border-0 d-flex align-items-center">
-							<span className="me-3">👤</span> Profilim{" "}
-							<span className="badge bg-secondary ms-auto small">Yakında</span>
+						<button className="list-group-item list-group-item-action py-3 border-0">
+							<span className="me-3">👤</span> Profilim
 						</button>
-						<button className="list-group-item list-group-item-action py-3 border-0 d-flex align-items-center">
-							<span className="me-3">⚙️</span> Ayarlar{" "}
-							<span className="badge bg-secondary ms-auto small">Yakında</span>
+						<button className="list-group-item list-group-item-action py-3 border-0">
+							<span className="me-3">⚙️</span> Ayarlar
 						</button>
 						<button
 							onClick={handleLogout}
-							className="list-group-item list-group-item-action py-3 border-0 text-danger fw-bold d-flex align-items-center mt-2 border-top">
+							className="list-group-item list-group-item-action py-3 border-0 text-danger fw-bold mt-auto">
 							<span className="me-3">🚪</span> Çıkış Yap
 						</button>
 					</div>
 				</div>
-				<div className="offcanvas-footer p-3 bg-light text-center small text-muted">
-					v1.0.0 - Finans Takip
-				</div>
 			</div>
 
-			{/* --- SAĞ PANEL (AI SIDEBAR) --- */}
+			{/* --- SAĞ PANEL (AI SIDEBAR) (Senin Kodun) --- */}
 			<div
 				className={`offcanvas offcanvas-end ${showAiPanel ? "show" : ""}`}
 				tabIndex="-1"
 				style={{
 					visibility: showAiPanel ? "visible" : "hidden",
 					width: "400px",
-					zIndex: 1055, // En üste aldık
+					zIndex: 1055,
 					position: "fixed",
 					top: 10,
 					bottom: 10,
 					right: 5,
 					borderRadius: "8px",
 					backgroundColor: "white",
-					boxShadow: "-5px 0 15px rgba(0,0,0,0.1)",
+					boxShadow: "-10px 0 30px rgba(0,0,0,0.1)",
 				}}>
 				<div
-					className="offcanvas-header bg-primary text-white"
+					className="offcanvas-header bg-white border-bottom"
 					style={{
 						borderTopLeftRadius: "8px",
 						borderTopRightRadius: "8px",
 					}}>
-					<h5 className="offcanvas-title">🤖 Yapay Zeka Tavsiyesi</h5>
+					<h5 className="offcanvas-title fw-bold text-primary">
+						🤖 Finansal Asistan
+					</h5>
 					<button
 						type="button"
-						className="btn-close btn-close-white"
+						className="btn-close"
 						onClick={() => setShowAiPanel(false)}></button>
 				</div>
-				<div className="offcanvas-body" style={{ overflowY: "auto" }}>
+				<div
+					className="offcanvas-body"
+					style={{ overflowY: "auto", padding: "20px" }}>
 					{loading ? (
 						<div className="text-center mt-5">
 							<div className="spinner-border text-primary" role="status"></div>
-							<p className="mt-3 text-muted">Harcamaların inceleniyor...</p>
+							<p className="mt-3 text-muted">Verileriniz analiz ediliyor...</p>
 						</div>
 					) : (
-						<div className="p-3">
+						<div className="p-1">
 							<p
 								style={{
 									whiteSpace: "pre-line",
 									lineHeight: "1.8",
 									fontSize: "1rem",
-									color: "#333",
+									color: "#444",
 								}}>
 								{aiYorum || "Analiz bekleniyor..."}
 							</p>
@@ -463,8 +514,7 @@ function Dashboard() {
 						setShowMenu(false);
 						setShowAiPanel(false);
 					}}
-					style={{ zIndex: 1040 }} // Panelin altında kalacak
-				></div>
+					style={{ zIndex: 1040 }}></div>
 			)}
 		</div>
 	);

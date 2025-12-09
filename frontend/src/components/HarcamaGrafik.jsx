@@ -8,7 +8,13 @@ import {
 	ResponsiveContainer,
 } from "recharts";
 
-const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042", "#8884d8"];
+const COLORS = [
+	"rgb(30, 60, 114)",
+	"rgb(40, 167, 69)",
+	"#FFBB28",
+	"#FF8042",
+	"#8884d8",
+];
 
 const HarcamaGrafik = ({ veriler }) => {
 	const gruplanmisVeri = veriler.reduce((acc, harcama) => {
