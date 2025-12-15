@@ -1,12 +1,15 @@
-import { Routes, Route, Navigate } from "react-router-dom";
+import {
+	BrowserRouter as Router,
+	Routes,
+	Route,
+	Navigate,
+} from "react-router-dom";
 import Login from "./components/Login";
 import Register from "./components/Register";
 import Dashboard from "./components/Dashboard";
+import LandingPage from "./components/LandingPage";
 
-// --- KORUMALI ROTA (PRIVATE ROUTE) ---
-// Bu bir güvenlik görevlisidir.
-// Token varsa çocuğun (Dashboard) geçmesine izin verir.
-// Yoksa "Hadi Login'e" der.
+// Basit bir güvenlik kontrolü (Token var mı?)
 const PrivateRoute = ({ children }) => {
 	const token = localStorage.getItem("token");
 	return token ? children : <Navigate to="/login" />;
@@ -14,23 +17,26 @@ const PrivateRoute = ({ children }) => {
 
 function App() {
 	return (
-		<Routes>
-			{/* 1. Giriş Sayfası (Herkes Girebilir) */}
-			<Route path="/login" element={<Login />} />
+		<Router>
+			<Routes>
+				{/* 1. Ana Sayfa artık LandingPage */}
+				<Route path="/" element={<LandingPage />} />
 
-			{/* 2. Kayıt Sayfası (Herkes Girebilir) */}
-			<Route path="/register" element={<Register />} />
+				{/* 2. Login ve Register sayfaları */}
+				<Route path="/login" element={<Login />} />
+				<Route path="/register" element={<Register />} />
 
-			{/* 3. Ana Sayfa (SADECE TOKENI OLANLAR GİREBİLİR) */}
-			<Route
-				path="/"
-				element={
-					<PrivateRoute>
-						<Dashboard />
-					</PrivateRoute>
-				}
-			/>
-		</Routes>
+				{/* 3. Dashboard korumalı alan */}
+				<Route
+					path="/dashboard"
+					element={
+						<PrivateRoute>
+							<Dashboard />
+						</PrivateRoute>
+					}
+				/>
+			</Routes>
+		</Router>
 	);
 }
 

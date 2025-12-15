@@ -26,7 +26,7 @@ const Login = () => {
 				// Token'ı tarayıcı hafızasına (LocalStorage) kaydet
 				localStorage.setItem("token", data.access_token);
 				// Ana sayfaya yönlendir
-				navigate("/");
+				navigate("/dashboard");
 			} else {
 				alert("Giriş başarısız! Email veya şifre yanlış.");
 			}

@@ -150,7 +150,7 @@ function Dashboard() {
 			style={{
 				position: "relative",
 				minHeight: "100vh",
-				fontFamily: "'Libre Baskerville', serif", // <-- İŞTE BU SATIR EKLENDİ
+				fontFamily: "'Libre Baskerville', serif",
 			}}>
 			{/* --- ARKA PLAN RESMİ (Senin Kodun - Aynen Korundu) --- */}
 			<div
