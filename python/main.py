@@ -39,55 +39,29 @@ def get_db():
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
-# --- GÜVENLİK FONKSİYONLARI ---
+# ==========================================
+# GÜVENLİK VE KULLANICI FONKSİYONLARI
+# ==========================================
 
-# main.py dosyasındaki create_user ve login fonksiyonlarını BUL ve BUNLARLA DEĞİŞTİR:
-
-# 1. DETAYLI KAYIT FONKSİYONU
+# 1. KAYIT OL
 @app.post("/users/", response_model=schemas.User)
 def create_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
-    print(f"\n📝 KAYIT DENEMESİ: {user.email}") # Terminale yaz
-    
-    # Email kontrolü
     db_user = db.query(models.User).filter(models.User.email == user.email).first()
     if db_user:
-        print("❌ HATA: Bu email zaten var!")
         raise HTTPException(status_code=400, detail="Bu email zaten kayıtlı")
     
-    # Şifreleme ve Kayıt
     hashed_password = utils.get_password_hash(user.password)
-    print(f"🔑 Şifre Hashlendi: {hashed_password[:10]}...")
-    
-    new_user = models.User(email=user.email, hashed_password=hashed_password)
+    # full_name parametresini de ekledik
+    new_user = models.User(email=user.email, full_name=user.full_name, hashed_password=hashed_password)
     db.add(new_user)
     db.commit()
     db.refresh(new_user)
-    
-    print(f"✅ KAYIT BAŞARILI! ID: {new_user.id} olarak veritabanına yazıldı.\n")
     return new_user
 
-# 2. DETAYLI GİRİŞ FONKSİYONU
-@app.post("/token", response_model=schemas.Token)
+# 2. GİRİŞ YAP (TOKEN AL)
+@app.post("/token") 
 def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
-    print(f"\n🔍 GİRİŞ DENEMESİ: {form_data.username} (Şifre: {form_data.password})")
-    
-    # Kullanıcıyı ara
     user = db.query(models.User).filter(models.User.email == form_data.username).first()
-    
-    if not user:
-        print(f"❌ HATA: '{form_data.username}' veritabanında BULUNAMADI!")
-        # Debug için tüm kullanıcıları yazdıralım
-        all_users = db.query(models.User).all()
-        print(f"📂 Mevcut Kullanıcılar: {[u.email for u in all_users]}")
-    else:
-        print(f"✅ KULLANICI BULUNDU: ID={user.id}")
-        
-        # Şifre kontrolü
-        if not utils.verify_password(form_data.password, user.hashed_password):
-             print(f"❌ ŞİFRE YANLIŞ! Veritabanındaki Hash: {user.hashed_password[:10]}...")
-        else:
-             print("✅ ŞİFRE DOĞRU! Giriş yapılıyor...")
-
     if not user or not utils.verify_password(form_data.password, user.hashed_password):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -99,9 +73,15 @@ def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(), db:
     access_token = utils.create_access_token(
         data={"sub": user.email}, expires_delta=access_token_expires
     )
-    return {"access_token": access_token, "token_type": "bearer"}
+    
+    return {
+        "access_token": access_token, 
+        "token_type": "bearer", 
+        "user_name": user.full_name,
+        "user_email": user.email
+    }
 
-# Şu anki kullanıcıyı bul
+# 3. AKTİF KULLANICIYI BUL (KRİTİK DÜZELTME: BU FONKSİYON YUKARI TAŞINDI)
 async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
@@ -120,7 +100,22 @@ async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = De
         raise credentials_exception
     return user
 
-# --- HARCAMA İŞLEMLERİ (ARTIK KORUMALI) ---
+# 4. ŞİFRE DEĞİŞTİR (Artık get_current_user tanımlı olduğu için hata vermeyecek)
+@app.post("/users/change-password")
+def change_password(pass_data: schemas.PasswordChange, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
+    # 1. Eski şifre doğru mu?
+    if not utils.verify_password(pass_data.old_password, current_user.hashed_password):
+        raise HTTPException(status_code=400, detail="Mevcut şifreniz hatalı.")
+    
+    # 2. Yeni şifreyi hashle ve kaydet
+    current_user.hashed_password = utils.get_password_hash(pass_data.new_password)
+    db.commit()
+    
+    return {"message": "Şifre başarıyla güncellendi."}
+
+# ==========================================
+# HARCAMA İŞLEMLERİ
+# ==========================================
 
 @app.post("/harcamalar/", response_model=schemas.Harcama)
 def create_harcama(harcama: schemas.HarcamaCreate, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
@@ -157,19 +152,17 @@ def update_harcama(harcama_id: int, veri: schemas.HarcamaCreate, db: Session = D
     db.refresh(harcama)
     return harcama
 
-
-
-# --- YAPAY ZEKA ANALİZİ ---
+# ==========================================
+# YAPAY ZEKA ANALİZİ
+# ==========================================
 
 # Google API Ayarı
-
 api_key = os.getenv("GOOGLE_API_KEY") 
 genai.configure(api_key=api_key)
 
-
 @app.post("/analyze/")
 def analyze_spending(db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
-    print(f"🤖 AI Analizi İsteği Geldi - Kullanıcı: {current_user.email}") # Debug logu
+    print(f"🤖 AI Analizi İsteği Geldi - Kullanıcı: {current_user.email}") 
 
     # 1. Harcamaları çek
     harcamalar = db.query(models.Transaction).filter(models.Transaction.owner_id == current_user.id).all()
@@ -188,9 +181,10 @@ def analyze_spending(db: Session = Depends(get_db), current_user: models.User = 
     
     print(f"📊 Toplam Harcama: {toplam} TL. Gemini'ye soruluyor...")
 
-    # 4. Gemini'ye Sor (Hata Korumalı)
+    # 4. Gemini'ye Sor
     try:
-        model = genai.GenerativeModel('gemini-2.5-flash')
+        # DÜZELTME: Burada da çalışan modeli kullanalım
+        model = genai.GenerativeModel('gemini-flash-latest')
         prompt = f"""
         Sen bir finansal danışmansın. Aşağıda bir kişinin harcama listesi var.
         Toplam Harcama: {toplam} TL.
@@ -209,21 +203,22 @@ def analyze_spending(db: Session = Depends(get_db), current_user: models.User = 
         return {"analiz": response.text}
         
     except Exception as e:
-        print(f"❌ AI HATASI: {e}") # Terminalde hatayı gör
+        print(f"❌ AI HATASI: {e}") 
         return {"analiz": f"Yapay zeka servisinde bir sorun oluştu. (Hata Detayı: {str(e)})"}
 
 
-# --- CHATBOT İŞLEVİ ---
-# --- CHATBOT FONKSİYONU (main.py - analyze fonksiyonunun altına ekle) ---
+# ==========================================
+# CHATBOT İŞLEVİ
+# ==========================================
 
 @app.post("/chat/", response_model=schemas.ChatResponse)
 def chat_with_ai(request: schemas.ChatRequest, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
     print(f"💬 Chat İsteği: {request.message} - Kullanıcı: {current_user.email}")
 
-    # 1. Kullanıcının harcamalarını çek (Bağlam oluşturmak için)
+    # 1. Kullanıcının harcamalarını çek
     harcamalar = db.query(models.Transaction).filter(models.Transaction.owner_id == current_user.id).all()
     
-    # 2. Finansal veriyi metne dök (AI'ın anlaması için)
+    # 2. Finansal veriyi metne dök
     harcama_ozeti = ""
     toplam = 0
     if not harcamalar:
@@ -237,9 +232,8 @@ def chat_with_ai(request: schemas.ChatRequest, db: Session = Depends(get_db), cu
 
     # 3. Gemini'ye Soruyu Sor
     try:
-        model = genai.GenerativeModel('gemini-flash-latest')
+        model = genai.GenerativeModel('gemini-2.5-flash')
         
-        # Prompt Mühendisliği: AI'a rol veriyoruz
         prompt = f"""
         Sen yardımsever ve esprili bir finans asistanısın. Adın 'FinanceAgent'.
         

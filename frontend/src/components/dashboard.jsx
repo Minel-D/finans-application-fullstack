@@ -1,12 +1,11 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-// İKON KÜTÜPHANESİ GÜNCELLENDİ: Emojiler yerine profesyonel ikonlar
+// İKON KÜTÜPHANESİ
 import {
 	BsChatDotsFill,
 	BsSendFill,
 	BsX,
 	BsRobot,
-	BsWallet2,
 	BsGraphUpArrow,
 	BsCalendar3,
 	BsPencilSquare,
@@ -14,7 +13,6 @@ import {
 	BsPieChartFill,
 	BsClockHistory,
 	BsCreditCard2FrontFill,
-	BsCheckCircleFill,
 } from "react-icons/bs";
 import Markdown from "react-markdown";
 import {
@@ -22,7 +20,6 @@ import {
 	Pie,
 	Cell,
 	Tooltip,
-	Legend,
 	ResponsiveContainer,
 	BarChart,
 	Bar,
@@ -79,6 +76,15 @@ function Dashboard() {
 		"#8884d8",
 	];
 	const COLORS_INVEST = ["#00C49F", "#0088FE", "#FFBB28", "#FF8042", "#82ca9d"];
+
+	// YENİ: Para Birimi Sembolünü Belirle
+	const currencyCode = localStorage.getItem("currency") || "TRY";
+	const currencySymbol =
+		{
+			TRY: "₺",
+			USD: "$",
+			EUR: "€",
+		}[currencyCode] || "₺";
 
 	useEffect(() => {
 		if (!token) navigate("/login");
@@ -196,6 +202,8 @@ function Dashboard() {
 
 	const handleLogout = () => {
 		localStorage.removeItem("token");
+		localStorage.removeItem("user_name");
+		localStorage.removeItem("user_email");
 		navigate("/login");
 	};
 
@@ -264,91 +272,108 @@ function Dashboard() {
 			style={{
 				minHeight: "100vh",
 				fontFamily: "'Libre Baskerville', serif",
-				background: "#f8f9fa",
 			}}>
+			{/* --- ARKA PLAN RESMİ (GERİ GELDİ - OPAKLIĞI 0.5) --- */}
+			<div
+				style={{
+					position: "fixed",
+					top: 0,
+					left: 0,
+					width: "100%",
+					height: "100%",
+					backgroundImage: "url('/finans.webp')",
+					backgroundSize: "cover",
+					backgroundPosition: "center",
+					opacity: 0.35,
+					zIndex: -1,
+				}}></div>
+			{/* Navbar */}
 			<nav
-				className="navbar px-4 py-3 sticky-top shadow-sm"
+				className="navbar px-4 py-2 sticky-top shadow-sm"
 				style={{
 					background: "linear-gradient(90deg, #1e3c72 0%, #2a5298 100%)",
 					color: "white",
 				}}>
 				<div className="d-flex align-items-center">
 					<button
-						className="btn btn-outline-light border-0 me-3"
+						className="btn btn-sm btn-outline-light border-0 me-3"
 						onClick={() => setShowMenu(true)}>
 						☰
 					</button>
 					<span
-						className="fw-bold fs-5"
-						style={{ fontFamily: "'Dancing Script'" }}>
+						className="fw-bold fs-6"
+						style={{ fontFamily: "'Dancing Script'", fontSize: "1.2rem" }}>
 						Varlık & Finans Yöneticisi
 					</span>
 				</div>
 			</nav>
 
-			<div className="container pt-4">
-				{/* TARİH FİLTRESİ (İkon Eklendi: BsCalendar3) */}
-				<div className="card border-0 shadow-sm mb-4 p-3 bg-white rounded-4">
-					<div className="d-flex flex-wrap gap-3 align-items-center justify-content-center">
-						<span className="text-primary fw-bold d-flex align-items-center">
-							<BsCalendar3 className="me-2" /> Tarih Aralığı:
+			{/* Container */}
+			<div className="container py-4" style={{ maxWidth: "1100px" }}>
+				{/* TARİH FİLTRESİ */}
+				<div className="card border-0 shadow-sm mb-4 p-2 bg-white rounded-4">
+					<div className="d-flex flex-wrap gap-2 align-items-center justify-content-center">
+						<span className="text-primary fw-bold small d-flex align-items-center">
+							<BsCalendar3 className="me-2" /> Tarih:
 						</span>
 						<input
 							type="date"
-							className="form-control w-auto rounded-pill border-primary bg-light"
+							className="form-control form-control-sm w-auto rounded-pill border-light bg-light text-muted"
 							value={baslangicTarihi}
 							onChange={(e) => setBaslangicTarihi(e.target.value)}
 						/>
-						<span className="text-muted fw-bold">-</span>
+						<span className="text-muted small fw-bold">-</span>
 						<input
 							type="date"
-							className="form-control w-auto rounded-pill border-primary bg-light"
+							className="form-control form-control-sm w-auto rounded-pill border-light bg-light text-muted"
 							value={bitisTarihi}
 							onChange={(e) => setBitisTarihi(e.target.value)}
 						/>
 					</div>
 				</div>
 
-				<div className="row mb-4">
+				<div className="row g-4 mb-5">
 					{/* SOL: FORM */}
-					<div className="col-md-5 mb-3">
+					<div className="col-md-5">
 						<div className="card shadow-sm border-0 h-100 rounded-4">
 							<div className="card-header bg-white border-0 pt-3 pb-0">
-								<ul className="nav nav-pills nav-fill gap-2 p-1 bg-light rounded-pill">
+								<ul className="nav nav-pills nav-fill gap-2 p-1 bg-light rounded-3">
 									<li className="nav-item">
 										<button
-											className={`nav-link rounded-pill fw-bold d-flex align-items-center justify-content-center ${
+											className={`nav-link btn-sm rounded-3 fw-bold small ${
 												islemTuru === "gider"
-													? "active bg-danger"
+													? "active bg-danger shadow-sm"
 													: "text-muted"
 											}`}
 											onClick={() => setIslemTuru("gider")}>
-											{/* İKON: Kredi Kartı */}
-											<BsCreditCard2FrontFill className="me-2" /> Gider Ekle
+											<BsCreditCard2FrontFill className="me-2" /> Gider
 										</button>
 									</li>
 									<li className="nav-item">
 										<button
-											className={`nav-link rounded-pill fw-bold d-flex align-items-center justify-content-center ${
+											className={`nav-link btn-sm rounded-3 fw-bold small ${
 												islemTuru === "yatirim"
-													? "active bg-success"
+													? "active bg-success shadow-sm"
 													: "text-muted"
 											}`}
 											onClick={() => setIslemTuru("yatirim")}>
-											{/* İKON: Yükseliş Grafiği (Landing Page ile aynı) */}
-											<BsGraphUpArrow className="me-2" /> Yatırım Ekle
+											<BsGraphUpArrow className="me-2" /> Yatırım
 										</button>
 									</li>
 								</ul>
 							</div>
-							<div className="card-body">
+							<div className="card-body pt-3">
 								<form onSubmit={handleFormSubmit}>
-									<div className="row g-2 mb-3">
+									<div className="row g-2 mb-2">
 										<div className="col-6">
-											<label className="small text-muted fw-bold">Tarih</label>
+											<label
+												className="small text-muted fw-bold"
+												style={{ fontSize: "0.75rem" }}>
+												TARİH
+											</label>
 											<input
 												type="date"
-												className="form-control"
+												className="form-control form-control-sm bg-light border-0"
 												name="tarih"
 												value={yeniIslem.tarih}
 												onChange={handleInputChange}
@@ -356,12 +381,14 @@ function Dashboard() {
 											/>
 										</div>
 										<div className="col-6">
-											<label className="small text-muted fw-bold">
-												Tutar (TL)
+											<label
+												className="small text-muted fw-bold"
+												style={{ fontSize: "0.75rem" }}>
+												TUTAR
 											</label>
 											<input
 												type="number"
-												className="form-control"
+												className="form-control form-control-sm bg-light border-0"
 												name="miktar"
 												value={yeniIslem.miktar}
 												onChange={handleInputChange}
@@ -372,12 +399,14 @@ function Dashboard() {
 									</div>
 
 									{islemTuru === "gider" ? (
-										<div className="mb-3">
-											<label className="small text-muted fw-bold">
-												Kategori
+										<div className="mb-2">
+											<label
+												className="small text-muted fw-bold"
+												style={{ fontSize: "0.75rem" }}>
+												KATEGORİ
 											</label>
 											<select
-												className="form-select"
+												className="form-select form-select-sm bg-light border-0"
 												name="kategori"
 												value={yeniIslem.kategori}
 												onChange={handleInputChange}>
@@ -391,12 +420,14 @@ function Dashboard() {
 										</div>
 									) : (
 										<>
-											<div className="mb-3">
-												<label className="small text-muted fw-bold">
-													Varlık Türü
+											<div className="mb-2">
+												<label
+													className="small text-muted fw-bold"
+													style={{ fontSize: "0.75rem" }}>
+													VARLIK TÜRÜ
 												</label>
 												<select
-													className="form-select"
+													className="form-select form-select-sm bg-light border-0"
 													name="asset_type"
 													value={yeniIslem.asset_type}
 													onChange={handleInputChange}>
@@ -412,31 +443,35 @@ function Dashboard() {
 											{["Hisse", "Fon", "Kripto", "Eurobond"].includes(
 												yeniIslem.asset_type
 											) && (
-												<div className="row g-2 mb-3">
+												<div className="row g-2 mb-2">
 													<div className="col-6">
-														<label className="small text-muted fw-bold">
-															Kod (Örn: THYAO)
+														<label
+															className="small text-muted fw-bold"
+															style={{ fontSize: "0.75rem" }}>
+															KOD (ÖRN: THYAO)
 														</label>
 														<input
 															type="text"
-															className="form-control"
+															className="form-control form-control-sm bg-light border-0"
 															name="symbol"
 															value={yeniIslem.symbol}
 															onChange={handleInputChange}
-															placeholder="Kod giriniz"
+															placeholder="Kod"
 														/>
 													</div>
 													<div className="col-6">
-														<label className="small text-muted fw-bold">
-															Alış Fiyatı (Adet)
+														<label
+															className="small text-muted fw-bold"
+															style={{ fontSize: "0.75rem" }}>
+															BİRİM MALİYET
 														</label>
 														<input
 															type="number"
-															className="form-control"
+															className="form-control form-control-sm bg-light border-0"
 															name="buy_price"
 															value={yeniIslem.buy_price}
 															onChange={handleInputChange}
-															placeholder="Birim maliyet"
+															placeholder="Fiyat"
 														/>
 													</div>
 												</div>
@@ -444,36 +479,28 @@ function Dashboard() {
 										</>
 									)}
 
-									<div className="mb-4">
-										<label className="small text-muted fw-bold">Açıklama</label>
+									<div className="mb-3">
+										<label
+											className="small text-muted fw-bold"
+											style={{ fontSize: "0.75rem" }}>
+											AÇIKLAMA
+										</label>
 										<input
 											type="text"
-											className="form-control"
+											className="form-control form-control-sm bg-light border-0"
 											name="aciklama"
 											value={yeniIslem.aciklama}
 											onChange={handleInputChange}
-											placeholder={
-												islemTuru === "gider"
-													? "Market alışverişi..."
-													: "Gelecek için birikim..."
-											}
+											placeholder="..."
 											required
 										/>
 									</div>
 
 									<button
 										type="submit"
-										className={`btn w-100 fw-bold text-white shadow-sm d-flex align-items-center justify-content-center ${
+										className={`btn btn-sm w-100 fw-bold text-white shadow-sm py-2 ${
 											islemTuru === "gider" ? "btn-danger" : "btn-success"
 										}`}>
-										{/* Buton İkonları */}
-										{duzenlenenId ? (
-											<BsCheckCircleFill className="me-2" />
-										) : islemTuru === "gider" ? (
-											<BsWallet2 className="me-2" />
-										) : (
-											<BsGraphUpArrow className="me-2" />
-										)}
 										{duzenlenenId
 											? "GÜNCELLE"
 											: islemTuru === "gider"
@@ -491,7 +518,7 @@ function Dashboard() {
 													miktar: "",
 												});
 											}}
-											className="btn btn-light w-100 mt-2 text-muted">
+											className="btn btn-sm btn-light w-100 mt-2 text-muted">
 											İptal
 										</button>
 									)}
@@ -501,23 +528,24 @@ function Dashboard() {
 					</div>
 
 					{/* SAĞ: GRAFİKLER */}
-					<div className="col-md-7 mb-3">
+					<div className="col-md-7">
 						<div className="card shadow-sm border-0 h-100 rounded-4">
 							<div className="card-header bg-white border-0 pt-3">
-								<h5 className="text-muted small text-uppercase fw-bold mb-0 d-flex align-items-center">
-									<BsPieChartFill className="me-2 text-primary" /> Finansal
-									Durum
-								</h5>
+								<h6 className="text-muted small fw-bold mb-0 d-flex align-items-center">
+									<BsPieChartFill className="me-2 text-primary" /> Finansal Özet
+								</h6>
 							</div>
 							<div className="card-body">
-								<div className="row h-100">
-									<div className="col-md-6 d-flex flex-column align-items-center">
-										<span className="small fw-bold text-muted mb-2">
+								<div className="row h-100 align-items-center">
+									<div className="col-md-6 d-flex flex-column align-items-center mb-3 mb-md-0">
+										<span
+											className="small fw-bold text-muted mb-2"
+											style={{ fontSize: "0.75rem" }}>
 											{islemTuru === "gider"
 												? "Gider Dağılımı"
 												: "Varlık Dağılımı"}
 										</span>
-										<div style={{ width: "100%", height: "200px" }}>
+										<div style={{ width: "100%", height: "160px" }}>
 											<ResponsiveContainer>
 												<PieChart>
 													<Pie
@@ -528,8 +556,8 @@ function Dashboard() {
 														}
 														cx="50%"
 														cy="50%"
-														innerRadius={40}
-														outerRadius={70}
+														innerRadius={35}
+														outerRadius={60}
 														paddingAngle={5}
 														dataKey="value">
 														{(islemTuru === "gider"
@@ -546,27 +574,31 @@ function Dashboard() {
 															/>
 														))}
 													</Pie>
-													<Tooltip formatter={(val) => `${val} ₺`} />
+													<Tooltip
+														formatter={(val) => `${val} ${currencySymbol}`}
+													/>
 												</PieChart>
 											</ResponsiveContainer>
 										</div>
 									</div>
 
 									<div className="col-md-6 d-flex flex-column align-items-center">
-										<span className="small fw-bold text-muted mb-2">
-											Gelir vs Gider Dengesi
+										<span
+											className="small fw-bold text-muted mb-2"
+											style={{ fontSize: "0.75rem" }}>
+											Gelir vs Gider
 										</span>
-										<div style={{ width: "100%", height: "200px" }}>
+										<div style={{ width: "100%", height: "160px" }}>
 											<ResponsiveContainer>
 												<BarChart data={ozetData}>
 													<CartesianGrid
 														strokeDasharray="3 3"
 														vertical={false}
 													/>
-													<XAxis dataKey="name" tick={{ fontSize: 12 }} />
+													<XAxis dataKey="name" tick={{ fontSize: 10 }} />
 													<YAxis hide />
 													<Tooltip formatter={(val) => `${val} ₺`} />
-													<Bar dataKey="miktar">
+													<Bar dataKey="miktar" radius={[4, 4, 0, 0]}>
 														{ozetData.map((entry, index) => (
 															<Cell
 																key={`cell-${index}`}
@@ -587,27 +619,36 @@ function Dashboard() {
 				{/* LİSTE */}
 				<div className="card shadow-sm border-0 rounded-4">
 					<div className="card-header bg-white py-3 border-0">
-						<h6 className="fw-bold m-0 text-primary d-flex align-items-center">
-							<BsClockHistory className="me-2" /> İşlem Geçmişi (
-							{baslangicTarihi} / {bitisTarihi})
+						<h6 className="fw-bold m-0 text-primary d-flex align-items-center small">
+							<BsClockHistory className="me-2" /> İşlem Geçmişi
 						</h6>
 					</div>
 					<div className="table-responsive">
-						<table className="table table-hover align-middle mb-0">
+						<table
+							className="table table-hover table-sm align-middle mb-0"
+							style={{ fontSize: "0.9rem" }}>
 							<thead className="bg-light">
 								<tr>
-									<th className="ps-4">Tür</th>
-									<th>Açıklama</th>
-									<th>Detay</th>
-									<th>Tarih</th>
-									<th className="text-end pe-4">Tutar</th>
-									<th></th>
+									<th className="ps-4 border-0 text-muted small fw-bold">
+										Tür
+									</th>
+									<th className="border-0 text-muted small fw-bold">
+										Açıklama
+									</th>
+									<th className="border-0 text-muted small fw-bold">Detay</th>
+									<th className="border-0 text-muted small fw-bold">Tarih</th>
+									<th className="text-end pe-4 border-0 text-muted small fw-bold">
+										Tutar
+									</th>
+									<th className="border-0"></th>
 								</tr>
 							</thead>
 							<tbody>
 								{goruntulenenVeriler.length === 0 ? (
 									<tr>
-										<td colSpan="6" className="text-center py-4 text-muted">
+										<td
+											colSpan="6"
+											className="text-center py-4 text-muted small">
 											Bu tarih aralığında kayıt yok.
 										</td>
 									</tr>
@@ -620,39 +661,44 @@ function Dashboard() {
 														item.is_investment ? "bg-success" : "bg-danger"
 													} bg-opacity-10 text-${
 														item.is_investment ? "success" : "danger"
-													}`}>
+													} rounded-pill px-2`}
+													style={{ fontSize: "0.7rem" }}>
 													{item.is_investment ? "YATIRIM" : "GİDER"}
 												</span>
 											</td>
-											<td className="fw-medium">{item.aciklama}</td>
+											<td className="fw-medium text-dark">{item.aciklama}</td>
 											<td>
-												<small className="text-muted">
+												<small
+													className="text-muted"
+													style={{ fontSize: "0.8rem" }}>
 													{item.kategori}
-													{item.symbol && ` (${item.symbol})`}
-													{item.buy_price && ` @ ${item.buy_price} ₺`}
+													{item.symbol && (
+														<span className="ms-1 fw-bold text-dark">
+															({item.symbol})
+														</span>
+													)}
 												</small>
 											</td>
-											<td>{item.tarih}</td>
+											<td className="text-muted small">{item.tarih}</td>
 											<td
 												className="text-end pe-4 fw-bold"
 												style={{
 													color: item.is_investment ? "#198754" : "#dc3545",
 												}}>
-												{item.miktar.toLocaleString()} ₺
+												{item.miktar.toLocaleString()} {currencySymbol}
 											</td>
 											<td className="text-end">
-												{/* İKONLAR: Düzenle (Kalem) ve Sil (Çöp Kutusu) */}
 												<button
 													onClick={() => handleDuzenleSec(item)}
-													className="btn btn-sm btn-light me-2 text-primary"
+													className="btn btn-sm btn-link text-primary p-0 me-2"
 													title="Düzenle">
-													<BsPencilSquare />
+													<BsPencilSquare size={14} />
 												</button>
 												<button
 													onClick={() => handleSil(item.id)}
-													className="btn btn-sm btn-light text-danger"
+													className="btn btn-sm btn-link text-danger p-0"
 													title="Sil">
-													<BsTrashFill />
+													<BsTrashFill size={14} />
 												</button>
 											</td>
 										</tr>
@@ -664,7 +710,8 @@ function Dashboard() {
 				</div>
 			</div>
 
-			{/* MENÜ (Sidebar) */}
+			{/* --- SOL MENÜ (PROFESYONEL SIDEBAR) --- */}
+			{/* DÜZELTME: Wrapper (Kapsayıcı) div geri eklendi! */}
 			<div
 				className={`offcanvas offcanvas-start ${showMenu ? "show" : ""}`}
 				tabIndex="-1"
@@ -676,32 +723,95 @@ function Dashboard() {
 					top: 0,
 					bottom: 0,
 					left: 0,
-					backgroundColor: "white",
+					backgroundColor: "#f8f9fa",
 					boxShadow: "5px 0 15px rgba(0,0,0,0.1)",
+					borderRight: "1px solid #e9ecef",
 				}}>
-				<div className="offcanvas-header border-bottom">
-					<h5 className="offcanvas-title fw-bold text-dark">Menü</h5>
-					<button
-						type="button"
-						className="btn-close"
-						onClick={() => setShowMenu(false)}></button>
+				{/* 1. Header (Kullanıcı Bilgisi) */}
+				<div
+					className="offcanvas-header p-4 d-flex flex-column align-items-start justify-content-center text-white"
+					style={{
+						background: "linear-gradient(135deg, #1e3c72 0%, #2a5298 100%)",
+					}}>
+					<div className="d-flex align-items-center w-100 justify-content-between mb-3">
+						<span
+							style={{
+								fontFamily: "'Dancing Script'",
+								fontSize: "1.5rem",
+								opacity: 0.9,
+							}}>
+							FinanceAgent
+						</span>
+						<button
+							type="button"
+							className="btn-close btn-close-white"
+							onClick={() => setShowMenu(false)}></button>
+					</div>
+
+					<div className="d-flex align-items-center gap-3">
+						<div
+							className="rounded-circle bg-white text-primary d-flex align-items-center justify-content-center fw-bold shadow-sm"
+							style={{ width: "45px", height: "45px", fontSize: "1.2rem" }}>
+							{(localStorage.getItem("user_name") || "K")
+								.charAt(0)
+								.toUpperCase()}
+						</div>
+						<div style={{ lineHeight: "1.2" }}>
+							<span className="fw-bold" style={{ fontSize: "0.9rem" }}>
+								{localStorage.getItem("user_name") || "Kullanıcı"}
+							</span>
+							<br />
+							<small
+								className="opacity-75"
+								style={{ fontSize: "0.7rem", display: "block" }}>
+								{localStorage.getItem("user_email")}
+							</small>
+						</div>
+					</div>
 				</div>
-				<div className="offcanvas-body p-0">
-					<div className="list-group list-group-flush">
-						<button className="list-group-item list-group-item-action py-3 border-0">
-							<span className="me-3">👤</span> Profilim
-						</button>
-						<button className="list-group-item list-group-item-action py-3 border-0">
-							<span className="me-3">⚙️</span> Ayarlar
+
+				{/* 2. Body (Menü Linkleri) */}
+				<div className="offcanvas-body p-3 d-flex flex-column">
+					<div className="list-group list-group-flush gap-2">
+						<button
+							onClick={() => navigate("/profile")}
+							className="list-group-item list-group-item-action border-0 rounded-3 d-flex align-items-center p-3"
+							style={{
+								background: "white",
+								boxShadow: "0 2px 4px rgba(0,0,0,0.02)",
+							}}>
+							<span className="me-3 fs-5">👤</span>
+							<span className="fw-bold text-secondary">Profilim</span>
 						</button>
 						<button
-							onClick={handleLogout}
-							className="list-group-item list-group-item-action py-3 border-0 text-danger fw-bold mt-auto">
-							<span className="me-3">🚪</span> Çıkış Yap
+							onClick={() => navigate("/settings")}
+							className="list-group-item list-group-item-action border-0 rounded-3 d-flex align-items-center p-3"
+							style={{
+								background: "white",
+								boxShadow: "0 2px 4px rgba(0,0,0,0.02)",
+							}}>
+							<span className="me-3 fs-5">⚙️</span>
+							<span className="fw-bold text-secondary">Ayarlar</span>
 						</button>
+					</div>
+
+					{/* 3. Footer (Çıkış Yap) */}
+					<div className="mt-auto pt-4 border-top">
+						<button
+							onClick={handleLogout}
+							className="btn btn-sm btn-outline-danger w-100 py-2 fw-bold d-flex align-items-center justify-content-center gap-2">
+							<span>🚪</span> Çıkış Yap
+						</button>
+						<div
+							className="text-center mt-3 text-muted"
+							style={{ fontSize: "0.7rem" }}>
+							v1.0.0 • FinanceAgent.AI
+						</div>
 					</div>
 				</div>
 			</div>
+
+			{/* Sidebar Arka Plan Karartısı */}
 			{showMenu && (
 				<div
 					className="modal-backdrop fade show"

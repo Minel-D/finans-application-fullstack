@@ -5,6 +5,7 @@ from typing import List, Optional
 class Token(BaseModel):
     access_token: str
     token_type: str
+    user_name: str
 
 class TokenData(BaseModel):
     email: Optional[str] = None
@@ -41,6 +42,7 @@ class Harcama(HarcamaBase):
 # --- USER ---
 class UserBase(BaseModel):
     email: str
+    full_name: str
 
 class UserCreate(UserBase):
     password: str
@@ -51,3 +53,8 @@ class User(UserBase):
 
     class Config:
         from_attributes = True
+
+# YENİ: Şifre Değiştirme Şeması
+class PasswordChange(BaseModel):
+    old_password: str
+    new_password: str

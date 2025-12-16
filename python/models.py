@@ -4,25 +4,28 @@ from database import Base
 
 class User(Base):
     __tablename__ = "users"
+
     id = Column(Integer, primary_key=True, index=True)
+    full_name = Column(String) # YENİ: İsim Soyisim sütunu
     email = Column(String, unique=True, index=True)
     hashed_password = Column(String)
+
     harcamalar = relationship("Transaction", back_populates="owner")
 
+# ... Transaction sınıfı aynı kalacak ...
 class Transaction(Base):
     __tablename__ = "harcamalar"
-
     id = Column(Integer, primary_key=True, index=True)
     aciklama = Column(String, index=True)
     miktar = Column(Float)
-    kategori = Column(String) # Market, Fatura veya Altın, Hisse
+    kategori = Column(String)
     tarih = Column(String)
     
-    # --- YENİ EKLENEN ALANLAR ---
-    is_investment = Column(Boolean, default=False) # Harcama mı (False), Yatırım mı (True)?
-    asset_type = Column(String, nullable=True) # Dolar, Euro, Hisse, Fon...
-    symbol = Column(String, nullable=True)     # THYAO, AAPL, GOLDT1 (Sadece hisse/fon için)
-    buy_price = Column(Float, nullable=True)   # Alış birim fiyatı
-    
+    # Yeni alanlar (Yatırım güncellemesiyle eklemiştik)
+    is_investment = Column(Boolean, default=False)
+    asset_type = Column(String, nullable=True)
+    symbol = Column(String, nullable=True)
+    buy_price = Column(Float, nullable=True)
+
     owner_id = Column(Integer, ForeignKey("users.id"))
     owner = relationship("User", back_populates="harcamalar")

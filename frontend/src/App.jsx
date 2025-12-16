@@ -8,6 +8,8 @@ import Login from "./components/Login";
 import Register from "./components/Register";
 import Dashboard from "./components/Dashboard";
 import LandingPage from "./components/LandingPage";
+import Profile from "./components/Profile";
+import Settings from "./components/Settings";
 
 // Basit bir güvenlik kontrolü (Token var mı?)
 const PrivateRoute = ({ children }) => {
@@ -32,6 +34,22 @@ function App() {
 					element={
 						<PrivateRoute>
 							<Dashboard />
+						</PrivateRoute>
+					}
+				/>
+				<Route
+					path="/profile"
+					element={
+						<PrivateRoute>
+							<Profile />
+						</PrivateRoute>
+					}
+				/>
+				<Route
+					path="/settings"
+					element={
+						<PrivateRoute>
+							<Settings />
 						</PrivateRoute>
 					}
 				/>
