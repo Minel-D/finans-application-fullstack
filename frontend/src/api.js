@@ -1,10 +1,11 @@
-// Backend Adresi (Python'un çalıştığı adres)
+// api.js - GÜNCEL HALİ
+
+// DİKKAT: Sonunda "/docs" YOK! Sadece ana adres.
 const BASE_URL = "http://127.0.0.1:8000";
 
 // --- KAYIT OLMA FONKSİYONU ---
 export const register = async (username, email, password) => {
-	// Backend'e istek atıyoruz
-	const response = await fetch(`${BASE_URL}/auth/register`, {
+	const response = await fetch(`${BASE_URL}/users/`, {
 		method: "POST",
 		headers: {
 			"Content-Type": "application/json",
@@ -12,10 +13,10 @@ export const register = async (username, email, password) => {
 		body: JSON.stringify({ username, email, password }),
 	});
 
-	// Eğer hata varsa fırlat (React yakalasın)
 	if (!response.ok) {
 		const errorData = await response.json();
-		throw new Error(errorData.detail || "Kayıt başarısız");
+		// Backend'den gelen gerçek hatayı fırlatıyoruz
+		throw new Error(errorData.detail || "Kayıt işlemi başarısız");
 	}
 
 	return response.json();
@@ -23,12 +24,13 @@ export const register = async (username, email, password) => {
 
 // --- GİRİŞ YAPMA FONKSİYONU ---
 export const login = async (email, password) => {
-	// FastAPI form-data formatı bekliyor
 	const formData = new URLSearchParams();
 	formData.append("username", email);
 	formData.append("password", password);
 
-	const response = await fetch(`${BASE_URL}/auth/token`, {
+	// DİKKAT: "/auth/token" yerine sadece "/token" deniyoruz
+	// Eğer Python'da prefix yoksa doğrusu budur.
+	const response = await fetch(`${BASE_URL}/token`, {
 		method: "POST",
 		headers: {
 			"Content-Type": "application/x-www-form-urlencoded",
@@ -37,7 +39,10 @@ export const login = async (email, password) => {
 	});
 
 	if (!response.ok) {
-		throw new Error("Giriş başarısız");
+		const errorData = await response.json().catch(() => ({}));
+		throw new Error(
+			errorData.detail || "Giriş başarısız! Bilgileri kontrol edin."
+		);
 	}
 
 	return response.json();

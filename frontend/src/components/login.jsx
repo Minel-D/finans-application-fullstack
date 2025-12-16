@@ -25,16 +25,20 @@ function Login() {
 
 	const handleSubmit = async (e) => {
 		e.preventDefault();
+		setError(""); // Önceki hatayı temizle
+
 		try {
 			const data = await login(email, password);
 			if (data.access_token) {
 				localStorage.setItem("token", data.access_token);
 				navigate("/dashboard");
 			} else {
-				setError("Giriş başarısız! Lütfen bilgilerinizi kontrol edin.");
+				setError("Beklenmedik bir yanıt alındı.");
 			}
 		} catch (err) {
-			setError("Giriş başarısız! Sunucu hatası.");
+			// DÜZELTME: Sabit mesaj yerine, api.js'den gelen gerçek hatayı yazdırıyoruz.
+			console.error("Giriş Hatası:", err); // Tarayıcı konsoluna (F12) detay basar
+			setError(err.message || "Giriş başarısız! Sunucu hatası.");
 		}
 	};
 

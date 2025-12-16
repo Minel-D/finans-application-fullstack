@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 from datetime import timedelta
 from typing import List
 import google.generativeai as genai
+from pydantic import BaseModel 
 
 import models
 import schemas
@@ -210,3 +211,51 @@ def analyze_spending(db: Session = Depends(get_db), current_user: models.User = 
     except Exception as e:
         print(f"❌ AI HATASI: {e}") # Terminalde hatayı gör
         return {"analiz": f"Yapay zeka servisinde bir sorun oluştu. (Hata Detayı: {str(e)})"}
+
+
+# --- CHATBOT İŞLEVİ ---
+# --- CHATBOT FONKSİYONU (main.py - analyze fonksiyonunun altına ekle) ---
+
+@app.post("/chat/", response_model=schemas.ChatResponse)
+def chat_with_ai(request: schemas.ChatRequest, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
+    print(f"💬 Chat İsteği: {request.message} - Kullanıcı: {current_user.email}")
+
+    # 1. Kullanıcının harcamalarını çek (Bağlam oluşturmak için)
+    harcamalar = db.query(models.Transaction).filter(models.Transaction.owner_id == current_user.id).all()
+    
+    # 2. Finansal veriyi metne dök (AI'ın anlaması için)
+    harcama_ozeti = ""
+    toplam = 0
+    if not harcamalar:
+        harcama_ozeti = "Kullanıcının henüz hiç harcama kaydı yok."
+    else:
+        for h in harcamalar:
+            harcama_ozeti += f"- {h.tarih} tarihinde {h.kategori} kategorisinde {h.miktar} TL ({h.aciklama})\n"
+            toplam += h.miktar
+    
+    context_text = f"Kullanıcının Toplam Harcaması: {toplam} TL.\nDetaylı Harcama Listesi:\n{harcama_ozeti}"
+
+    # 3. Gemini'ye Soruyu Sor
+    try:
+        model = genai.GenerativeModel('gemini-flash-latest')
+        
+        # Prompt Mühendisliği: AI'a rol veriyoruz
+        prompt = f"""
+        Sen yardımsever ve esprili bir finans asistanısın. Adın 'FinanceAgent'.
+        
+        Aşağıda kullanıcının finansal verileri var:
+        {context_text}
+        
+        Kullanıcının sorusu: "{request.message}"
+        
+        Lütfen kullanıcının verilerine dayanarak bu soruyu cevapla. 
+        Eğer verilerde cevabı yoksa (örneğin 'köpeğimin adı ne' gibi), finansla ilgili olmadığı için nazikçe konuyu finansa getir.
+        Cevabın kısa, net ve samimi olsun.
+        """
+        
+        response = model.generate_content(prompt)
+        return {"response": response.text}
+        
+    except Exception as e:
+        print(f"❌ CHAT HATASI: {e}")
+        return {"response": "Şu an bağlantıda bir sorun var, ama senin için buradayım. Lütfen tekrar dene."}

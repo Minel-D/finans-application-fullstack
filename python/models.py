@@ -1,31 +1,28 @@
-from sqlalchemy import Column, Integer, String, Float, ForeignKey
+from sqlalchemy import Column, Integer, String, Float, ForeignKey, Boolean
 from sqlalchemy.orm import relationship
 from database import Base
 
-# --- KULLANICI TABLOSU ---
 class User(Base):
     __tablename__ = "users"
-
     id = Column(Integer, primary_key=True, index=True)
-    email = Column(String, unique=True, index=True) # Aynı email ile 2 kişi olamaz
-    hashed_password = Column(String) # Şifrenin hashlenmiş hali
-
-    # İlişki: Bir kullanıcının birden fazla harcaması olabilir.
+    email = Column(String, unique=True, index=True)
+    hashed_password = Column(String)
     harcamalar = relationship("Transaction", back_populates="owner")
 
-
-# --- HARCAMA TABLOSU ---
 class Transaction(Base):
     __tablename__ = "harcamalar"
 
     id = Column(Integer, primary_key=True, index=True)
     aciklama = Column(String, index=True)
     miktar = Column(Float)
-    kategori = Column(String)
+    kategori = Column(String) # Market, Fatura veya Altın, Hisse
     tarih = Column(String)
     
-    # YENİ: Bu harcama kime ait?
-    owner_id = Column(Integer, ForeignKey("users.id")) # users tablosunun id'sine bağlanır
+    # --- YENİ EKLENEN ALANLAR ---
+    is_investment = Column(Boolean, default=False) # Harcama mı (False), Yatırım mı (True)?
+    asset_type = Column(String, nullable=True) # Dolar, Euro, Hisse, Fon...
+    symbol = Column(String, nullable=True)     # THYAO, AAPL, GOLDT1 (Sadece hisse/fon için)
+    buy_price = Column(Float, nullable=True)   # Alış birim fiyatı
     
-    # İlişki: Bu harcamanın bir sahibi vardır.
+    owner_id = Column(Integer, ForeignKey("users.id"))
     owner = relationship("User", back_populates="harcamalar")

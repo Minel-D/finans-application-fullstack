@@ -1,7 +1,7 @@
 from pydantic import BaseModel
 from typing import List, Optional
 
-# --- TOKEN ŞEMASI ---
+# --- TOKEN ---
 class Token(BaseModel):
     access_token: str
     token_type: str
@@ -9,12 +9,24 @@ class Token(BaseModel):
 class TokenData(BaseModel):
     email: Optional[str] = None
 
-# --- HARCAMA ŞEMALARI ---
+# --- CHATBOT ---
+class ChatRequest(BaseModel):
+    message: str
+
+class ChatResponse(BaseModel):
+    response: str
+
+# --- HARCAMA / YATIRIM ---
 class HarcamaBase(BaseModel):
     aciklama: str
     miktar: float
     kategori: str
     tarih: str
+    # Yeni alanlar (Opsiyonel, çünkü harcamada bunlar boş olabilir)
+    is_investment: bool = False
+    asset_type: Optional[str] = None
+    symbol: Optional[str] = None
+    buy_price: Optional[float] = None
 
 class HarcamaCreate(HarcamaBase):
     pass
@@ -26,7 +38,7 @@ class Harcama(HarcamaBase):
     class Config:
         from_attributes = True
 
-# --- KULLANICI ŞEMALARI ---
+# --- USER ---
 class UserBase(BaseModel):
     email: str
 
