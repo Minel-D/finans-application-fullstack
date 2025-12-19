@@ -58,3 +58,4 @@ class User(UserBase):
 class PasswordChange(BaseModel):
     old_password: str
     new_password: str
+

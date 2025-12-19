@@ -2,10 +2,12 @@ from fastapi import FastAPI, Depends, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
-from datetime import timedelta
+from datetime import timedelta, datetime
 from typing import List
 import google.generativeai as genai
 from pydantic import BaseModel 
+import yfinance as yf
+from tefas import Crawler
 
 import models
 import schemas
@@ -253,3 +255,129 @@ def chat_with_ai(request: schemas.ChatRequest, db: Session = Depends(get_db), cu
     except Exception as e:
         print(f"❌ CHAT HATASI: {e}")
         return {"response": "Şu an bağlantıda bir sorun var, ama senin için buradayım. Lütfen tekrar dene."}
+    
+class SymbolList(BaseModel):
+    symbols: List[str]
+
+
+@app.post("/prices/")
+def get_current_prices(request: SymbolList):
+    prices = {}
+    print(f"📈 Fiyat isteği geldi: {request.symbols}")
+
+    for sym in request.symbols:
+        s = sym.upper().strip()
+        price_found = False
+
+        # --- 1. ALTIN (GRAM TL) ---
+        if s == "ALTIN":
+            try:
+                # Ons ve Dolar Kuru ile hassas hesaplama
+                gold_ticker = yf.Ticker("XAUUSD=X")
+                gold_data = gold_ticker.history(period="1d")
+                if gold_data.empty: gold_data = yf.Ticker("GC=F").history(period="1d")
+                
+                usd_data = yf.Ticker("TRY=X").history(period="1d")
+
+                if not gold_data.empty and not usd_data.empty:
+                    gold_oz_usd = gold_data['Close'].iloc[-1]
+                    usd_try = usd_data['Close'].iloc[-1]
+                    gram_tl = (gold_oz_usd * usd_try) / 31.1034768
+                    prices[sym] = round(gram_tl, 2)
+                    price_found = True
+                    print(f"✅ ALTIN: {prices[sym]} ₺")
+                    continue
+            except: pass
+
+        # --- 2. GÜMÜŞ (GRAM TL) ---
+        if s == "GUMUS" or s == "GÜMÜŞ":
+            try:
+                silver_data = yf.Ticker("SI=F").history(period="1d")
+                usd_data = yf.Ticker("TRY=X").history(period="1d")
+
+                if not silver_data.empty and not usd_data.empty:
+                    silver_oz_usd = silver_data['Close'].iloc[-1]
+                    usd_try = usd_data['Close'].iloc[-1]
+                    gram_tl = (silver_oz_usd * usd_try) / 31.1034768
+                    prices[sym] = round(gram_tl, 2)
+                    price_found = True
+                    print(f"✅ GÜMÜŞ: {prices[sym]} ₺")
+                    continue
+            except: pass
+
+        # --- 3. KRİPTO PARALAR VE HİSSELER ---
+        if not price_found:
+            # Denenecek senaryolar: 
+            # 1. Direkt Kodu Dene (BIST için .IS)
+            # 2. "-TRY" ekle (Kripto TL fiyatı için)
+            # 3. "-USD" ekle ve Dolarla çarp (Kripto Dolar fiyatı için)
+            
+            ticker_candidates = []
+            
+            # Eğer kod 3-4 harfliyse ve USD/EUR değilse (Muhtemelen Kripto veya BIST)
+            if len(s) >= 3 and s not in ["USD", "EUR", "GBP", "DOLAR", "EURO"]:
+                 ticker_candidates.append(f"{s}-TRY") # Önce TL karşılığını ara (Örn: ETH-TRY)
+                 ticker_candidates.append(f"{s}-USD") # Sonra Dolar karşılığını ara (Örn: ETH-USD)
+                 ticker_candidates.append(f"{s}.IS")  # Sonra BIST hissesi ara (Örn: THYAO.IS)
+            
+            # Standart dövizler
+            if s == "DOLAR" or s == "USD": ticker_candidates = ["TRY=X"]
+            if s == "EURO" or s == "EUR": ticker_candidates = ["EURTRY=X"]
+
+            usd_rate = None # Dolar kurunu hafızada tut
+
+            for t in ticker_candidates:
+                try:
+                    ticker = yf.Ticker(t)
+                    data = ticker.history(period="1d")
+                    
+                    if not data.empty:
+                        current_price = data['Close'].iloc[-1]
+                        
+                        # Eğer "-USD" ile bulduysak, bunu TL'ye çevirmemiz lazım!
+                        if t.endswith("-USD"):
+                            if usd_rate is None: # Kuru henüz çekmediysek çek
+                                usd_data = yf.Ticker("TRY=X").history(period="1d")
+                                if not usd_data.empty:
+                                    usd_rate = usd_data['Close'].iloc[-1]
+                            
+                            if usd_rate:
+                                current_price = current_price * usd_rate
+                                print(f"💱 {t} ($) -> TL Çevrildi: {current_price}")
+                        
+                        prices[sym] = round(current_price, 2)
+                        price_found = True
+                        print(f"✅ Bulundu ({t}): {prices[sym]}")
+                        break
+                except:
+                    continue
+
+        # --- 4. TEFAS ---
+        if not price_found and len(s) == 3:
+            try:
+                tefas = Crawler()
+                start_date = (datetime.now() - timedelta(days=7)).strftime("%Y-%m-%d")
+                result = tefas.fetch(start=start_date, columns=["code", "price"])
+                fund = result[result['code'] == s]
+                if not fund.empty:
+                    prices[sym] = round(fund.iloc[0]['price'], 6)
+                    print(f"✅ TEFAS: {sym} -> {prices[sym]}")
+                else:
+                    prices[sym] = None
+            except: prices[sym] = None
+
+        if not price_found:
+            prices[sym] = None
+
+    return prices
+
+
+
+
+
+
+
+
+
+
+
