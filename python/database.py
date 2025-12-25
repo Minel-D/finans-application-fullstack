@@ -1,37 +1,32 @@
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import sessionmaker
+import os
+from dotenv import load_dotenv
 
-# 1. VERİTABANI BAĞLANTI ADRESİ (Connection String)
-# Format: postgresql://kullanici_adi:sifre@sunucu_adresi/veritabani_adi
-SQLALCHEMY_DATABASE_URL = "postgresql://postgres:E4rgt1s1!@localhost/finans_takip"
+# .env dosyasını yükle (Local çalışma için)
+load_dotenv()
 
-# 2. MOTORU (ENGINE) OLUŞTURMA
-# Bu, veritabanı ile Python arasındaki asıl bağlantı kanalıdır.
+# --- VERİTABANI BAĞLANTI AYARI ---
+
+# 1. Önce Render'dan gelen DATABASE_URL var mı diye bak
+SQLALCHEMY_DATABASE_URL = os.getenv("DATABASE_URL")
+
+# 2. Eğer Render yoksa (Localdeyiz), kendi bilgisayarındaki ayarları kullan
+if not SQLALCHEMY_DATABASE_URL:
+    db_user = os.getenv("DB_USER", "postgres")
+    db_password = os.getenv("DB_PASSWORD", "admin") # Burası senin şifren neyse o kalsın
+    db_host = os.getenv("DB_HOST", "localhost")
+    db_name = os.getenv("DB_NAME", "finans_takip")
+    SQLALCHEMY_DATABASE_URL = f"postgresql://{db_user}:{db_password}@{db_host}/{db_name}"
+
+# 3. Render Düzeltmesi: postgres:// ile başlıyorsa postgresql:// yap (SQLAlchemy kuralı)
+if SQLALCHEMY_DATABASE_URL and SQLALCHEMY_DATABASE_URL.startswith("postgres://"):
+    SQLALCHEMY_DATABASE_URL = SQLALCHEMY_DATABASE_URL.replace("postgres://", "postgresql://", 1)
+
+# Bağlantıyı Kur
 engine = create_engine(SQLALCHEMY_DATABASE_URL)
 
-# 3. OTURUM (SESSION) FABRİKASI
-# Veritabanı ile her iletişim kurmak istediğimizde (veri ekle, çek)
-# buradan yeni bir 'Session' (Oturum) alacağız.
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
-# 4. TABLO TABANI (BASE)
-# İleride oluşturacağımız tüm tablolar (Kullanıcılar, Harcamalar)
-# bu 'Base' sınıfından türetilecek. Bu sayede Python sınıflarını SQL tablolarına dönüştüreceğiz.
 Base = declarative_base()
-
-# 5. BAĞLANTIYI TEST ETME (İsteğe bağlı, çalıştığını görmek için)
-# Bu dosya doğrudan çalıştırılırsa basit bir bağlantı dener.
-if __name__ == "__main__":
-    try:
-        # Önce modelleri içeri alalım ki Python neyi oluşturacağını bilsin
-        import models 
-        
-        # Base.metadata.create_all komutu, models.py içindeki 
-        # tüm tabloları veritabanında oluşturur.
-        Base.metadata.create_all(bind=engine)
-        
-        print("✅ Veritabanı bağlantısı BAŞARILI!")
-        print("✅ Tablolar (Harcamalar) başarıyla oluşturuldu!")
-    except Exception as e:
-        print("❌ Bağlantı HATASI:", e)
