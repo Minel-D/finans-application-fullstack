@@ -1,4 +1,5 @@
-const BASE_URL = "http://127.0.0.1:8000";
+// Render Backend Adresi (Sonunda / işareti yok, dikkat!)
+const BASE_URL = "https://finance-tracking-n468.onrender.com";
 
 // --- KAYIT OLMA (İsim eklendi) ---
 export const register = async (username, email, password) => {
