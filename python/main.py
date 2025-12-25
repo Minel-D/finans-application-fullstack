@@ -260,6 +260,9 @@ class SymbolList(BaseModel):
     symbols: List[str]
 
 
+# ==========================================
+# PRICES ENDPOINT (SADECE SON GÜNLER & EN GÜNCEL)
+# ==========================================
 @app.post("/prices/")
 def get_current_prices(request: SymbolList):
     prices = {}
@@ -269,107 +272,92 @@ def get_current_prices(request: SymbolList):
         s = sym.upper().strip()
         price_found = False
 
-        # --- 1. ALTIN (GRAM TL) ---
-        if s == "ALTIN":
-            try:
-                # Ons ve Dolar Kuru ile hassas hesaplama
-                gold_ticker = yf.Ticker("XAUUSD=X")
-                gold_data = gold_ticker.history(period="1d")
-                if gold_data.empty: gold_data = yf.Ticker("GC=F").history(period="1d")
-                
-                usd_data = yf.Ticker("TRY=X").history(period="1d")
-
-                if not gold_data.empty and not usd_data.empty:
-                    gold_oz_usd = gold_data['Close'].iloc[-1]
-                    usd_try = usd_data['Close'].iloc[-1]
-                    gram_tl = (gold_oz_usd * usd_try) / 31.1034768
-                    prices[sym] = round(gram_tl, 2)
-                    price_found = True
-                    print(f"✅ ALTIN: {prices[sym]} ₺")
-                    continue
-            except: pass
-
-        # --- 2. GÜMÜŞ (GRAM TL) ---
-        if s == "GUMUS" or s == "GÜMÜŞ":
-            try:
-                silver_data = yf.Ticker("SI=F").history(period="1d")
-                usd_data = yf.Ticker("TRY=X").history(period="1d")
-
-                if not silver_data.empty and not usd_data.empty:
-                    silver_oz_usd = silver_data['Close'].iloc[-1]
-                    usd_try = usd_data['Close'].iloc[-1]
-                    gram_tl = (silver_oz_usd * usd_try) / 31.1034768
-                    prices[sym] = round(gram_tl, 2)
-                    price_found = True
-                    print(f"✅ GÜMÜŞ: {prices[sym]} ₺")
-                    continue
-            except: pass
-
-        # --- 3. KRİPTO PARALAR VE HİSSELER ---
-        if not price_found:
-            # Denenecek senaryolar: 
-            # 1. Direkt Kodu Dene (BIST için .IS)
-            # 2. "-TRY" ekle (Kripto TL fiyatı için)
-            # 3. "-USD" ekle ve Dolarla çarp (Kripto Dolar fiyatı için)
-            
-            ticker_candidates = []
-            
-            # Eğer kod 3-4 harfliyse ve USD/EUR değilse (Muhtemelen Kripto veya BIST)
-            if len(s) >= 3 and s not in ["USD", "EUR", "GBP", "DOLAR", "EURO"]:
-                 ticker_candidates.append(f"{s}-TRY") # Önce TL karşılığını ara (Örn: ETH-TRY)
-                 ticker_candidates.append(f"{s}-USD") # Sonra Dolar karşılığını ara (Örn: ETH-USD)
-                 ticker_candidates.append(f"{s}.IS")  # Sonra BIST hissesi ara (Örn: THYAO.IS)
-            
-            # Standart dövizler
-            if s == "DOLAR" or s == "USD": ticker_candidates = ["TRY=X"]
-            if s == "EURO" or s == "EUR": ticker_candidates = ["EURTRY=X"]
-
-            usd_rate = None # Dolar kurunu hafızada tut
-
-            for t in ticker_candidates:
-                try:
-                    ticker = yf.Ticker(t)
-                    data = ticker.history(period="1d")
-                    
-                    if not data.empty:
-                        current_price = data['Close'].iloc[-1]
-                        
-                        # Eğer "-USD" ile bulduysak, bunu TL'ye çevirmemiz lazım!
-                        if t.endswith("-USD"):
-                            if usd_rate is None: # Kuru henüz çekmediysek çek
-                                usd_data = yf.Ticker("TRY=X").history(period="1d")
-                                if not usd_data.empty:
-                                    usd_rate = usd_data['Close'].iloc[-1]
-                            
-                            if usd_rate:
-                                current_price = current_price * usd_rate
-                                print(f"💱 {t} ($) -> TL Çevrildi: {current_price}")
-                        
-                        prices[sym] = round(current_price, 2)
-                        price_found = True
-                        print(f"✅ Bulundu ({t}): {prices[sym]}")
-                        break
-                except:
-                    continue
-
-        # --- 4. TEFAS ---
-        if not price_found and len(s) == 3:
+        # --- 1. TEFAS KONTROLÜ (GUM vb.) ---
+        if len(s) == 3 and s not in ["USD", "EUR", "GBP", "ETH", "BTC", "SOL", "XRP", "AVX", "BNB", "USDT"]:
             try:
                 tefas = Crawler()
-                start_date = (datetime.now() - timedelta(days=7)).strftime("%Y-%m-%d")
-                result = tefas.fetch(start=start_date, columns=["code", "price"])
-                fund = result[result['code'] == s]
+                
+                # BUGÜN ve SADECE SON 3 GÜN (Hafta sonu boşluğunu kurtarmak için)
+                end_date = datetime.now().strftime("%Y-%m-%d")
+                start_date = (datetime.now() - timedelta(days=3)).strftime("%Y-%m-%d")
+                
+                # Sadece bu dar aralığı çek
+                result = tefas.fetch(start=start_date, end=end_date, columns=["date", "code", "price"])
+                fund = result[result['code'] == s].copy()
+                
                 if not fund.empty:
-                    prices[sym] = round(fund.iloc[0]['price'], 6)
-                    print(f"✅ TEFAS: {sym} -> {prices[sym]}")
-                else:
-                    prices[sym] = None
-            except: prices[sym] = None
+                    import pandas as pd
+                    fund['date'] = pd.to_datetime(fund['date'])
+                    
+                    # Tarihe göre YENİDEN -> ESKİYE sırala
+                    # Böylece listenin en tepesindeki (iloc[0]) en güncel tarih olur.
+                    fund = fund.sort_values(by="date", ascending=False)
+                    
+                    # En tepedeki (En güncel) veriyi al
+                    latest_price = fund.iloc[0]['price']
+                    latest_date = fund.iloc[0]['date'].strftime('%Y-%m-%d')
+                    
+                    prices[sym] = round(latest_price, 6)
+                    print(f"✅ TEFAS ({latest_date}): {sym} -> {prices[sym]} TL")
+                    price_found = True
+                    continue 
+            except Exception as e:
+                print(f"⚠️ TEFAS Hatası ({s}): {e}")
+                pass
 
+        # --- 2. ALTIN ---
+        if s == "ALTIN" and not price_found:
+            try:
+                gold = yf.Ticker("XAUUSD=X").history(period="1d")
+                if gold.empty: gold = yf.Ticker("GC=F").history(period="1d")
+                usd = yf.Ticker("TRY=X").history(period="1d")
+                if not gold.empty and not usd.empty:
+                    prices[sym] = round((gold['Close'].iloc[-1] * usd['Close'].iloc[-1]) / 31.1034768, 2)
+                    price_found = True
+                    continue
+            except: pass
+
+        # --- 3. GÜMÜŞ ---
+        if (s == "GUMUS" or s == "GÜMÜŞ") and not price_found:
+            try:
+                silver = yf.Ticker("SI=F").history(period="1d")
+                usd = yf.Ticker("TRY=X").history(period="1d")
+                if not silver.empty and not usd.empty:
+                    prices[sym] = round((silver['Close'].iloc[-1] * usd['Close'].iloc[-1]) / 31.1034768, 2)
+                    price_found = True
+                    continue
+            except: pass
+
+        # --- 4. PİYASA ---
         if not price_found:
-            prices[sym] = None
-
+            candidates = []
+            if len(s) >= 3 and s not in ["USD","EUR","GBP","DOLAR","EURO"]:
+                candidates = [f"{s}-TRY", f"{s}-USD", f"{s}.IS"]
+            if s in ["DOLAR", "USD"]: candidates = ["TRY=X"]
+            if s in ["EURO", "EUR"]: candidates = ["EURTRY=X"]
+            
+            usd_rate = None
+            for t in candidates:
+                try:
+                    data = yf.Ticker(t).history(period="1d")
+                    if not data.empty:
+                        price = data['Close'].iloc[-1]
+                        if t.endswith("-USD"):
+                            if not usd_rate: 
+                                u_d = yf.Ticker("TRY=X").history(period="1d")
+                                if not u_d.empty: usd_rate = u_d['Close'].iloc[-1]
+                            if usd_rate: price *= usd_rate
+                        
+                        prices[sym] = round(price, 2)
+                        price_found = True
+                        print(f"✅ PİYASA: {t} -> {prices[sym]}")
+                        break
+                except: continue
+        
+        if not price_found: prices[sym] = None
     return prices
+
+
 
 
 

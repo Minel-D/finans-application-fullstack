@@ -1,22 +1,26 @@
 from passlib.context import CryptContext
+import os
 from datetime import datetime, timedelta
-from typing import Union
+from typing import Union, Any
 from jose import jwt
 
-# BU ANAHTAR ÇOK ÖNEMLİ (Token'ları imzalamak için)
-SECRET_KEY = "cok_gizli_anahtar_buraya_istedigini_yazabilirsin"
+# --- AYARLAR ---
+ACCESS_TOKEN_EXPIRE_MINUTES = 30
 ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 30 # Oturum süresi
+SECRET_KEY = os.getenv("SECRET_KEY", "gizli_anahtar_buraya_yazilacak_cok_gizli_olmali")
 
+# --- ŞİFRELEME (DOĞRU VE GÜVENLİ YÖNTEM: BCRYPT) ---
+# schemes=["bcrypt"] en güvenli standarttır.
+# deprecated="auto" eski şifreleri otomatik günceller.
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
-def verify_password(plain_password, hashed_password):
-    return pwd_context.verify(plain_password, hashed_password)
-
-def get_password_hash(password):
+def get_password_hash(password: str) -> str:
     return pwd_context.hash(password)
 
-def create_access_token(data: dict, expires_delta: Union[timedelta, None] = None):
+def verify_password(plain_password: str, hashed_password: str) -> bool:
+    return pwd_context.verify(plain_password, hashed_password)
+
+def create_access_token(data: dict, expires_delta: Union[timedelta, None] = None) -> str:
     to_encode = data.copy()
     if expires_delta:
         expire = datetime.utcnow() + expires_delta
