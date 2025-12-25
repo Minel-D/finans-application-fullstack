@@ -16,7 +16,7 @@ SQLALCHEMY_DATABASE_URL = os.getenv("DATABASE_URL")
 if not SQLALCHEMY_DATABASE_URL:
     db_user = os.getenv("DB_USER", "postgres")
     db_password = os.getenv("DB_PASSWORD", "admin") # Burası senin şifren neyse o kalsın
-    db_host = os.getenv("DB_HOST", "localhost")
+    db_host = os.getenv("DB_HOST", "https://finance-tracking-n468.onrender.com")
     db_name = os.getenv("DB_NAME", "finans_takip")
     SQLALCHEMY_DATABASE_URL = f"postgresql://{db_user}:{db_password}@{db_host}/{db_name}"
 

@@ -24,9 +24,16 @@ models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
 
+# Frontend Adresin (Sonunda / işareti OLMASIN)
+origins = [
+    "http://localhost:3000",
+    "http://localhost:5173",
+    "https://finance-tracking-3knp.onrender.com"  # <-- YENİ EKLEDİĞİMİZ BU!
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=origins, # Veya geçici olarak ["*"] yaparsan herkese izin verir (Test için)
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

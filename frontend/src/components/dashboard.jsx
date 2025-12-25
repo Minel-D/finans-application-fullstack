@@ -207,8 +207,8 @@ function Dashboard() {
 
 		try {
 			const url = duzenlenenId
-				? `http://127.0.0.1:8000/harcamalar/${duzenlenenId}`
-				: "http://127.0.0.1:8000/harcamalar/";
+				? `https://finance-tracking-n468.onrender.com/harcamalar/${duzenlenenId}`
+				: "https://finance-tracking-n468.onrender.com/harcamalar/";
 			const method = duzenlenenId ? "PUT" : "POST";
 
 			const response = await fetch(url, {
@@ -257,10 +257,13 @@ function Dashboard() {
 
 	const handleSil = async (id) => {
 		if (window.confirm("Silinsin mi?")) {
-			await fetch(`http://127.0.0.1:8000/harcamalar/${id}`, {
-				method: "DELETE",
-				headers: { Authorization: `Bearer ${token}` },
-			});
+			await fetch(
+				`https://finance-tracking-n468.onrender.com/harcamalar/${id}`,
+				{
+					method: "DELETE",
+					headers: { Authorization: `Bearer ${token}` },
+				}
+			);
 			setTumVeriler(tumVeriler.filter((h) => h.id !== id));
 		}
 	};
