@@ -4,9 +4,9 @@ import {
 	Route,
 	Navigate,
 } from "react-router-dom";
-import Login from "./components/Login";
-import Register from "./components/Register";
-import Dashboard from "./components/Dashboard";
+import Login from "./components/login";
+import Register from "./components/register";
+import Dashboard from "./components/dashboard";
 import LandingPage from "./components/LandingPage";
 import Profile from "./components/Profile";
 import Settings from "./components/Settings";
@@ -38,7 +38,7 @@ function App() {
 					}
 				/>
 				<Route
-					path="/profile"
+					path="/Profile"
 					element={
 						<PrivateRoute>
 							<Profile />
@@ -46,7 +46,7 @@ function App() {
 					}
 				/>
 				<Route
-					path="/settings"
+					path="/Settings"
 					element={
 						<PrivateRoute>
 							<Settings />
