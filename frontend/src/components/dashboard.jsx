@@ -979,8 +979,64 @@ function Dashboard() {
 					flexDirection: "column",
 				}}>
 				<div className="card-header bg-primary text-white">Asistan</div>
-				<div className="card-body">
+
+				<div
+					className="card-body"
+					style={{ overflowY: "auto", maxHeight: "400px" }}>
+					{/* EKSİK OLAN KISIM BURASIYDI: Mesajları Listele */}
+					{messages.map((msg, index) => (
+						<div
+							key={index}
+							className={`d-flex mb-2 ${
+								msg.sender === "user"
+									? "justify-content-end"
+									: "justify-content-start"
+							}`}>
+							<div
+								className={`p-2 rounded-3 small shadow-sm ${
+									msg.sender === "user"
+										? "bg-primary text-white rounded-bottom-0" // Kullanıcı Mesajı
+										: "bg-light text-dark border rounded-bottom-0" // Bot Mesajı
+								}`}
+								style={{ maxWidth: "80%" }}>
+								{msg.sender === "bot" ? (
+									<div className="d-flex align-items-center">
+										<BsRobot className="me-2 text-primary" />
+										<Markdown>{msg.text}</Markdown>
+									</div>
+								) : (
+									msg.text
+								)}
+							</div>
+						</div>
+					))}
+					{/* Yükleniyor Animasyonu */}
+					{chatLoading && (
+						<div className="text-start text-muted small fst-italic ms-2">
+							Yazıyor...
+						</div>
+					)}
 					<div ref={chatEndRef}></div>
+				</div>
+
+				{/* INPUT ALANI (Burası sende zaten var ama eksikse diye atıyorum) */}
+				<div className="card-footer bg-white border-0">
+					<form
+						className="input-group"
+						onSubmit={handleSendMessage} // <-- Bunu eklemeyi unutma
+					>
+						<input
+							ref={textareaRef}
+							type="text"
+							className="form-control form-control-sm bg-light border-0"
+							placeholder="Finansal bir soru sor..."
+							value={inputMessage}
+							onChange={(e) => setInputMessage(e.target.value)}
+						/>
+						<button className="btn btn-sm btn-primary" type="submit">
+							<BsSendFill />
+						</button>
+					</form>
 				</div>
 			</div>
 		</div>
