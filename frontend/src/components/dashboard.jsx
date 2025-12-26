@@ -111,6 +111,7 @@ function Dashboard() {
 			);
 			if (response.ok) {
 				const data = await response.json();
+				console.log("Backend'den Gelen Kullanıcı Verisi:", data);
 				setUserInfo(data);
 			}
 		} catch (error) {
@@ -1103,9 +1104,23 @@ function Dashboard() {
 								}`}
 								style={{ maxWidth: "80%" }}>
 								{msg.sender === "bot" ? (
-									<div className="d-flex align-items-center">
-										<BsRobot className="me-2 text-primary" />
-										<Markdown>{msg.text}</Markdown>
+									<div className="d-flex align-items-start">
+										{" "}
+										{/* align-items-center yerine start */}
+										{/* İkonu sabitle (flex-shrink-0) ve yukarı hizala */}
+										<BsRobot
+											className="me-2 text-primary mt-1 flex-shrink-0"
+											size={18}
+										/>
+										{/* Metni sarmala ve taşmasını önle */}
+										<div
+											className="flex-grow-1"
+											style={{
+												overflowWrap: "break-word",
+												wordBreak: "break-word",
+											}}>
+											<Markdown>{msg.text}</Markdown>
+										</div>
 									</div>
 								) : (
 									msg.text
