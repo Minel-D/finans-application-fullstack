@@ -111,7 +111,7 @@ function Dashboard() {
 	const fetchVeriler = async () => {
 		try {
 			const response = await fetch(
-				"https://finance-tracking-3knp.onrender.com/harcamalar",
+				"https://finance-tracking-n468.onrender.com/harcamalar",
 				{
 					headers: { Authorization: `Bearer ${token}` },
 				}
@@ -145,7 +145,7 @@ function Dashboard() {
 
 		try {
 			const response = await fetch(
-				"https://finance-tracking-3knp.onrender.com/prices",
+				"https://finance-tracking-n468.onrender.com/prices",
 				{
 					method: "POST",
 					headers: {
@@ -289,7 +289,7 @@ function Dashboard() {
 		setChatLoading(true);
 		try {
 			const response = await fetch(
-				"https://finance-tracking-3knp.onrender.com/chat",
+				"https://finance-tracking-n468.onrender.com/chat",
 				{
 					method: "POST",
 					headers: {
