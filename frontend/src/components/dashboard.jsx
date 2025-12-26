@@ -76,6 +76,10 @@ function Dashboard() {
 	const COLORS_INVEST = ["#00C49F", "#0088FE", "#FFBB28", "#FF8042", "#82ca9d"];
 	const currencyCode = localStorage.getItem("currency") || "TRY";
 	const currencySymbol = { TRY: "₺", USD: "$", EUR: "€" }[currencyCode] || "₺";
+	const [userInfo, setUserInfo] = useState({
+		full_name: "Kullanıcı",
+		email: "",
+	});
 
 	useEffect(() => {
 		if (!token) navigate("/login");
@@ -94,6 +98,35 @@ function Dashboard() {
 	useEffect(() => {
 		chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
 	}, [messages, isChatOpen]);
+
+	// Bu fonksiyonu component içine ekle
+	const fetchUserInfo = async () => {
+		try {
+			const response = await fetch(
+				"https://finance-tracking-n468.onrender.com/users/me",
+				{
+					// Eğer endpoint farklıysa /users/ olarak değiştir
+					headers: { Authorization: `Bearer ${token}` },
+				}
+			);
+			if (response.ok) {
+				const data = await response.json();
+				setUserInfo(data);
+			}
+		} catch (error) {
+			console.error("Kullanıcı bilgisi alınamadı", error);
+		}
+	};
+
+	// Sayfa açılınca çalışması için useEffect'e ekle
+	useEffect(() => {
+		if (token) {
+			fetchUserInfo(); // <--- BUNU EKLE
+			fetchVeriler();
+		} else {
+			navigate("/login");
+		}
+	}, []);
 
 	const filtrele = (data) => {
 		if (!baslangicTarihi && !bitisTarihi) {
@@ -918,7 +951,6 @@ function Dashboard() {
 				</div>
 			</div>
 
-			{/* Sidebar ve Chatbot HTML'i (Aynı) */}
 			<div
 				className={`offcanvas offcanvas-start ${showMenu ? "show" : ""}`}
 				tabIndex="-1"
@@ -932,15 +964,86 @@ function Dashboard() {
 					left: 0,
 					backgroundColor: "#f8f9fa",
 					boxShadow: "5px 0 15px rgba(0,0,0,0.1)",
+					border: "none",
 				}}>
-				<button
-					type="button"
-					className="btn-close text-reset m-3"
-					onClick={() => setShowMenu(false)}></button>
-				<div className="p-4">
-					<button onClick={handleLogout} className="btn btn-danger w-100">
-						Çıkış
-					</button>
+				{/* --- 1. MAVİ ŞERİT (HEADER) --- */}
+				<div
+					className="offcanvas-header p-4"
+					style={{
+						background: "linear-gradient(90deg, #1e3c72 0%, #2a5298 100%)", // Sitenin ana rengi
+						color: "white",
+					}}>
+					<div className="d-flex align-items-center gap-3">
+						{/* Yuvarlak Baş Harf */}
+						<div
+							className="d-flex align-items-center justify-content-center rounded-circle bg-white text-primary fw-bold shadow-sm"
+							style={{ width: "45px", height: "45px", fontSize: "1.2rem" }}>
+							{/* İsmin ilk harfini al, yoksa 'U' koy */}
+							{userInfo.full_name
+								? userInfo.full_name.charAt(0).toUpperCase()
+								: "U"}
+						</div>
+
+						{/* İsim ve Email Bilgisi */}
+						<div style={{ overflow: "hidden" }}>
+							<h6
+								className="m-0 fw-bold text-truncate"
+								style={{ maxWidth: "160px" }}>
+								{userInfo.full_name || "Misafir"}
+							</h6>
+							<small className="opacity-75" style={{ fontSize: "0.75rem" }}>
+								{userInfo.email || "Hoşgeldiniz"}
+							</small>
+						</div>
+					</div>
+
+					{/* Kapatma Butonu */}
+					<button
+						type="button"
+						className="btn-close btn-close-white position-absolute top-0 end-0 m-3"
+						onClick={() => setShowMenu(false)}></button>
+				</div>
+
+				{/* --- 2. MENÜ BUTONLARI --- */}
+				<div className="offcanvas-body p-0">
+					<div className="p-3 d-flex flex-column gap-2 mt-2">
+						{/* Profil */}
+						<button
+							onClick={() => {
+								setShowMenu(false);
+								navigate("/profile");
+							}}
+							className="btn btn-light w-100 text-start d-flex align-items-center gap-3 py-3 px-3 border-0 shadow-sm"
+							style={{ borderRadius: "12px" }}>
+							<span className="bg-primary bg-opacity-10 text-primary p-2 rounded-circle">
+								👤
+							</span>
+							<span className="fw-medium text-dark">Profilim</span>
+						</button>
+
+						{/* Ayarlar */}
+						<button
+							onClick={() => {
+								setShowMenu(false);
+								navigate("/settings");
+							}}
+							className="btn btn-light w-100 text-start d-flex align-items-center gap-3 py-3 px-3 border-0 shadow-sm"
+							style={{ borderRadius: "12px" }}>
+							<span className="bg-secondary bg-opacity-10 text-secondary p-2 rounded-circle">
+								⚙️
+							</span>
+							<span className="fw-medium text-dark">Ayarlar</span>
+						</button>
+					</div>
+
+					{/* En Altta Çıkış Butonu */}
+					<div className="p-3 mt-auto position-absolute bottom-0 w-100">
+						<button
+							onClick={handleLogout}
+							className="btn btn-danger w-100 py-2 rounded-3 shadow-sm d-flex align-items-center justify-content-center gap-2">
+							🚪 Güvenli Çıkış
+						</button>
+					</div>
 				</div>
 			</div>
 			{showMenu && (
