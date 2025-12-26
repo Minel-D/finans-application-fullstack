@@ -122,6 +122,12 @@ def change_password(pass_data: schemas.PasswordChange, db: Session = Depends(get
     
     return {"message": "Şifre başarıyla güncellendi."}
 
+# 5. KULLANICI BİLGİLERİNİ GETİR (EKSİK OLAN BU!)
+@app.get("/users/me", response_model=schemas.User)
+def read_users_me(current_user: models.User = Depends(get_current_user)):
+    return current_user
+
+
 # ==========================================
 # HARCAMA İŞLEMLERİ
 # ==========================================
