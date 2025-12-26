@@ -110,9 +110,12 @@ function Dashboard() {
 
 	const fetchVeriler = async () => {
 		try {
-			const response = await fetch("http://127.0.0.1:8000/harcamalar/", {
-				headers: { Authorization: `Bearer ${token}` },
-			});
+			const response = await fetch(
+				"https://finance-tracking-3knp.onrender.com//harcamalar/",
+				{
+					headers: { Authorization: `Bearer ${token}` },
+				}
+			);
 			if (response.status === 401) {
 				handleLogout();
 				return;
@@ -141,14 +144,17 @@ function Dashboard() {
 		if (uniqueSymbols.length === 0) return;
 
 		try {
-			const response = await fetch("http://127.0.0.1:8000/prices/", {
-				method: "POST",
-				headers: {
-					"Content-Type": "application/json",
-					Authorization: `Bearer ${token}`,
-				},
-				body: JSON.stringify({ symbols: uniqueSymbols }),
-			});
+			const response = await fetch(
+				"https://finance-tracking-3knp.onrender.com//prices/",
+				{
+					method: "POST",
+					headers: {
+						"Content-Type": "application/json",
+						Authorization: `Bearer ${token}`,
+					},
+					body: JSON.stringify({ symbols: uniqueSymbols }),
+				}
+			);
 			const data = await response.json();
 			setGuncelFiyatlar(data);
 		} catch (error) {
@@ -282,14 +288,17 @@ function Dashboard() {
 		setInputMessage("");
 		setChatLoading(true);
 		try {
-			const response = await fetch("http://127.0.0.1:8000/chat/", {
-				method: "POST",
-				headers: {
-					"Content-Type": "application/json",
-					Authorization: `Bearer ${token}`,
-				},
-				body: JSON.stringify({ message: userMsg.text }),
-			});
+			const response = await fetch(
+				"https://finance-tracking-3knp.onrender.com//chat/",
+				{
+					method: "POST",
+					headers: {
+						"Content-Type": "application/json",
+						Authorization: `Bearer ${token}`,
+					},
+					body: JSON.stringify({ message: userMsg.text }),
+				}
+			);
 			const data = await response.json();
 			setMessages((p) => [...p, { sender: "bot", text: data.response }]);
 		} catch (error) {
