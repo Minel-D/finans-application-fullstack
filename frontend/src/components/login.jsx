@@ -1,9 +1,9 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-// EKSİK OLAN IMPORT EKLENDİ (Beyaz ekranı bu çözer)
+// EKSİK OLAN IMPORT EKLENDİ
 import { login } from "../api";
 
-// İkonlara BsArrowLeft eklendi
+// İkonlar
 import {
 	BsEnvelope,
 	BsLock,
@@ -11,6 +11,7 @@ import {
 	BsEye,
 	BsEyeSlash,
 	BsArrowLeft,
+	BsExclamationTriangleFill, // Uyarı ikonu eklendi
 } from "react-icons/bs";
 
 function Login() {
@@ -52,7 +53,7 @@ function Login() {
 				position: "relative",
 				overflow: "hidden",
 			}}>
-			{/* --- YENİ EKLENEN ANA SAYFA BUTONU --- */}
+			{/* --- ANA SAYFA BUTONU --- */}
 			<div
 				style={{ position: "absolute", top: "20px", left: "20px", zIndex: 10 }}>
 				<button
@@ -92,7 +93,7 @@ function Login() {
 					backdropFilter: "blur(12px)",
 					borderRadius: "20px",
 				}}>
-				<div className="text-center mb-4">
+				<div className="text-center mb-3">
 					<h2
 						className="fw-bold"
 						style={{
@@ -107,8 +108,20 @@ function Login() {
 					</p>
 				</div>
 
+				{/* --- ⚠️ KRİTİK UYARI NOTU (YENİ EKLENDİ) --- */}
+				<div
+					className="alert alert-warning border-0 shadow-sm d-flex align-items-start gap-2 p-2 mb-4"
+					style={{ fontSize: "0.85rem", borderRadius: "10px" }}>
+					<BsExclamationTriangleFill className="mt-1 flex-shrink-0" size={16} />
+					<div>
+						<strong>Demo Notu:</strong> Render Free Tier sunucusu kullanıldığı
+						için ilk giriş işlemi sunucunun uyanmasına bağlı olarak{" "}
+						<strong>~60 saniye</strong> sürebilir. Lütfen bekleyiniz. ⏳
+					</div>
+				</div>
+
 				{error && (
-					<div className="alert alert-danger text-center py-2 small">
+					<div className="alert alert-danger text-center py-2 small mb-3">
 						{error}
 					</div>
 				)}
@@ -146,7 +159,7 @@ function Login() {
 								<BsLock />
 							</span>
 
-							{/* Input: Tipe dikkat (showPassword ? "text" : "password") */}
+							{/* Input: Tipe dikkat */}
 							<input
 								type={showPassword ? "text" : "password"}
 								className="form-control border-start-0 border-end-0 ps-0"
@@ -157,7 +170,7 @@ function Login() {
 								style={{ boxShadow: "none" }}
 							/>
 
-							{/* GÖZ İKONU BUTTONU */}
+							{/* GÖZ İKONU */}
 							<span
 								className="input-group-text bg-white border-start-0 text-secondary"
 								style={{ cursor: "pointer" }}

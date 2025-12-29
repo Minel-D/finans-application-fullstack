@@ -1,9 +1,9 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-// EKSİK OLAN IMPORT EKLENDİ (Beyaz ekranı bu çözer)
+// API importu
 import { register } from "../api";
 
-// İkonlara BsArrowLeft (Geri ok) eklendi
+// İkonlar (BsExclamationTriangleFill EKLENDİ)
 import {
 	BsPerson,
 	BsEnvelope,
@@ -12,6 +12,7 @@ import {
 	BsEye,
 	BsEyeSlash,
 	BsArrowLeft,
+	BsExclamationTriangleFill, // <--- Uyarı ikonu buraya eklendi
 } from "react-icons/bs";
 
 function Register() {
@@ -55,7 +56,7 @@ function Register() {
 				position: "relative",
 				overflow: "hidden",
 			}}>
-			{/* --- YENİ EKLENEN ANA SAYFA BUTONU --- */}
+			{/* --- ANA SAYFA BUTONU --- */}
 			<div
 				style={{ position: "absolute", top: "20px", left: "20px", zIndex: 10 }}>
 				<button
@@ -95,7 +96,7 @@ function Register() {
 					backdropFilter: "blur(12px)",
 					borderRadius: "20px",
 				}}>
-				<div className="text-center mb-4">
+				<div className="text-center mb-3">
 					<h2
 						className="fw-bold"
 						style={{
@@ -106,6 +107,18 @@ function Register() {
 						Aramıza Katılın!
 					</h2>
 					<p className="text-muted small">Finansal özgürlüğe ilk adımı atın!</p>
+				</div>
+
+				{/* --- ⚠️ KRİTİK UYARI NOTU (REGISTER İÇİN UYARLANDI) --- */}
+				<div
+					className="alert alert-warning border-0 shadow-sm d-flex align-items-start gap-2 p-2 mb-4"
+					style={{ fontSize: "0.85rem", borderRadius: "10px" }}>
+					<BsExclamationTriangleFill className="mt-1 flex-shrink-0" size={16} />
+					<div>
+						<strong>Demo Notu:</strong> Render Free Tier sunucusu kullanıldığı
+						için kayıt işlemi sunucunun uyanmasına bağlı olarak{" "}
+						<strong>~60 saniye</strong> sürebilir. Lütfen bekleyiniz. ⏳
+					</div>
 				</div>
 
 				{message && (
