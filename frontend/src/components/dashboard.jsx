@@ -233,6 +233,7 @@ function Dashboard() {
 			if (yeniIslem.asset_type === "Euro") calculatedSymbol = "EUR";
 		}
 
+		// --- DÜZELTME BURADA YAPILDI ---
 		const veri = {
 			...yeniIslem,
 			miktar: parseFloat(yeniIslem.miktar),
@@ -243,6 +244,8 @@ function Dashboard() {
 			// Hesaplanmış fiyat varsa onu, yoksa girileni al
 			buy_price:
 				islemTuru === "yatirim" ? parseFloat(calculatedBuyPrice) : null,
+
+			asset_type: islemTuru === "yatirim" ? yeniIslem.asset_type : null,
 		};
 
 		try {
